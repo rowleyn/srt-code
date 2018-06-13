@@ -1,0 +1,30 @@
+{
+	"station":{
+		"lat": "___",
+		"long": "___",
+		"name": "___"
+	},
+
+	"azel":{
+		"azimuth": "___",
+		"elevation": "___",
+	},
+
+	"sources":[
+		{"name": "___", "ras": "___", "dec": "___"},
+		{"name": "___", "ras": "___", "dec": "___"}
+	],
+
+	"azlimits":{
+		"low": "___",
+		"high": "___"
+	},
+
+	"ellimits":{
+		"low": "___",
+		"high": "___"
+	},
+
+	
+
+}
