@@ -1,30 +1,28 @@
 {
-	"station":{
-		"lat": "___",
-		"long": "___",
-		"name": "___"
-	},
-
-	"azel":{
-		"azimuth": "___",
-		"elevation": "___",
-	},
-
-	"sources":[
-		{"name": "___", "ras": "___", "dec": "___"},
-		{"name": "___", "ras": "___", "dec": "___"}
-	],
-
-	"azlimits":{
-		"low": "___",
-		"high": "___"
-	},
-
-	"ellimits":{
-		"low": "___",
-		"high": "___"
-	},
-
-	
-
+    "config": {
+        "station": {
+            "lat": "___",
+            "lon": "___",
+            "height": "___",
+            "name": "___"
+        },
+        "azal": {
+            "azimuth": 180,
+            "altitude": 90
+        },
+        "sources": {
+            "name": {
+                "ras": "___",
+                "dec": "___"
+            }
+        },
+        "azlimits": {
+            "lower": "___",
+            "upper": "___"
+        },
+        "allimits": {
+            "lower": "___",
+            "upper": "___"
+        }
+    }
 }
