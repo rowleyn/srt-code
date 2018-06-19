@@ -10,6 +10,7 @@ import json
 import sys
 from astropy.coordinates import SkyCoord, EarthLocation, AltAz
 from astropy.time import Time
+import ntplib
 
 ### change these depending on which converter is attached to the telescope and how it is configured ###
 SEND_PORT = 23 				# port number (int) of the converter connected to the station
@@ -25,7 +26,7 @@ class CommandStation:
 		self.port = SEND_PORT
 		self.addr = SEND_IP
 		self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		self.sock.settimeout(1)
+		self.sock.settimeout(5)
 
 	#######################################################
 	'''
@@ -69,7 +70,7 @@ class CommandStation:
 
 		self.sock.connect((self.addr,self.port))		#open connection to the serial to ethernet converter
 
-		while (not azset or not alset):
+		while (not azset or not alset):					#while loop will always set azimuth first if not already set, then altitude if not already set
 
 			if not azset:
 				message = ' move ' + str(direction) + ' ' + str(azcount) + '\n'	#move to new azimuth
@@ -78,17 +79,8 @@ class CommandStation:
 			print(message)
 			self.sock.send(message.encode('ascii'))					#send message to stamp via serial to ethernet converter
 			print('data sent')
-
-			#receive response from stamp via serial to ethernet converter
-			#stamp sends back one thing at a time, so a loop is necessary to receive all the data
-			response = []
-			for x in range(300):
-				try:
-					j = self.sock.recv(DEFAULT_BUFFER_SIZE)
-					print(j.decode('ascii').strip())
-					response.append(j.decode('ascii').strip())
-				except OSError:
-					break
+			
+			response = self.sock.recv(DEFAULT_BUFFER_SIZE).decode('ascii').rstrip().split()		#receive and format response data
 			print('reply received')
 			
 			if response[0] == 'M':						#response indicates successful completion of movement
@@ -112,7 +104,8 @@ class CommandStation:
 
 		station['config']['azal']['azimuth'] = curaz		#update srtconfig.json with new azimuth and altitude values
 		station['config']['azal']['altitude'] = cural
-		with open('srtconfig.json','w') as f:					#rewrite srtconfig.json with new information
+		
+		with open('srtconfig.json','w') as f:				#rewrite srtconfig.json with new information
 			json.dump(station,f,indent=4)
 
 		### closes socket ###
@@ -136,13 +129,17 @@ class CommandStation:
 		with open('srtconfig.json') as f:								#get station data from config
 			station = json.load(f)
 
-		source = station['config']['sources']['sourcename']				#look up source by name
+		source = station['config']['sources'][sourcename]				#look up source by name
 		source = SkyCoord(source['ras'],source['dec'],frame = 'icrs')	#convert source into astropy SkyCoord object for coord transformation
 
 		location = station['config']['station']							#look up station location data
 		location = EarthLocation(lat = location['lat'], lon = location['lon'], height = location['height']) 	#convert location into astropy EarthLocation
 
-		observingtime = Time()#need to figure out how to do this											#create astropy Time object containing current local time
+		c = ntplib.NTPClient()
+		ntptime = c.request('ntp.carleton.edu',version = 4)				#get current time from Carleton's NTP server
+		systime = ntptime.tx_time										#convert ntp time to system time (unix time)
+
+		observingtime = Time(systime-18000,format = 'unix')				#create astropy Time object using converted ntp time
 
 		azalt = AltAz(location = location, obstime = observingtime)		#create AltAz reference frame
 
@@ -150,7 +147,7 @@ class CommandStation:
 
 		### command station with az/alt coords ###
 
-		self.movebyazal(math.floor(source.az),math.floor(source.alt))
+		self.movebyazal(round(source.az),round(source.alt))
 
 	##################################################################
 	'''
@@ -181,15 +178,20 @@ class CommandStation:
 		for e in message:
 			self.sock.send(e.encode('ascii'))
 
+		'''
 		#receive response from stamp via serial to ethernet converter
 		#stamp sends back one thing at a time, so a loop is necessary to receive all the data
 		response = []
 		for x in range(300):
-			j = self.sock.recv(DEFAULT_BUFFER_SIZE)
-			if from_bytes(j) == -1:
-				break
-			else:
-				response[x] = j.decode('ascii')
+			try:
+				j = self.sock.recv(DEFAULT_BUFFER_SIZE)
+				print(j.decode('ascii').strip())
+				response.append(j.decode('ascii').strip())
+			except OSError:
+				break											#TCP socket times out after stamp stops sending
+		'''
+
+		response = self.sock.recv(DEFAULT_BUFFER_SIZE).decode('ascii').rstrip().split()		#receive and format response data
 
 		#close the socket if it hasn't been already closed by the server
 		#only closes if no more data is being received
@@ -247,13 +249,13 @@ class CommandStation:
 def main():
 
 	command = CommandStation()
-	'''
+
 	print('test: azimuth only, small increase/decrease, large increase/decrease')
 	command.movebyazal(200,90)			#small azimuth increase
 	command.movebyazal(180,90)			#small azimuth decrease
 	command.movebyazal(360,90)			#large azimuth increase
 	command.movebyazal(180,90)			#large azimuth decrease
-	'''
+
 	print('test: altitude only, small increase/decrease, large increase/decrease')
 	command.movebyazal(180,120)			#small altitude increase
 	command.movebyazal(180,90)			#small altitude decrease
