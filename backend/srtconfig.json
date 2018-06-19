@@ -23,6 +23,10 @@
         "allimits": {
             "lower": "___",
             "upper": "___"
+        },
+        "freqrange": {
+        	"lower": "___",
+        	"upper": "___"
         }
     }
 }

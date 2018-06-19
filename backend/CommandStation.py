@@ -1,9 +1,9 @@
-"""
+'''
 A class that uses a TCP socket to command the station
 through an Ethernet to serial converter.
 
 Author: Nathan Rowley
-"""
+'''
 
 import socket
 import json
