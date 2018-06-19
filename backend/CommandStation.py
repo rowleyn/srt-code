@@ -16,17 +16,15 @@ import ntplib
 SEND_PORT = 23 				# port number (int) of the converter connected to the station
 SEND_IP = '192.168.0.8' 	# ip address (str) of the converter connnected to the station
 DEFAULT_BUFFER_SIZE = 4096
+DEFAULT_TIMEOUT = 10
 
 class CommandStation:
-
-	### instance variables ###
-
 
 	def __init__(self):
 		self.port = SEND_PORT
 		self.addr = SEND_IP
 		self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		self.sock.settimeout(5)
+		self.sock.settimeout(DEFAULT_TIMEOUT)
 
 	#######################################################
 	'''
@@ -80,7 +78,7 @@ class CommandStation:
 			self.sock.send(message.encode('ascii'))					#send message to stamp via serial to ethernet converter
 			print('data sent')
 			
-			response = self.sock.recv(DEFAULT_BUFFER_SIZE).decode('ascii').rstrip().split()		#receive and format response data
+			response = self.sock.recv(DEFAULT_BUFFER_SIZE).decode('ascii').strip().split()		#receive and format response data
 			print('reply received')
 			
 			if response[0] == 'M':						#response indicates successful completion of movement
@@ -137,9 +135,9 @@ class CommandStation:
 
 		c = ntplib.NTPClient()
 		ntptime = c.request('ntp.carleton.edu',version = 4)				#get current time from Carleton's NTP server
-		systime = ntptime.tx_time										#convert ntp time to system time (unix time)
+		unixtime = ntptime.tx_time - 18000								#convert ntp time to unix time
 
-		observingtime = Time(systime-18000,format = 'unix')				#create astropy Time object using converted ntp time
+		observingtime = Time(unixtime,format = 'unix')					#create astropy Time object using converted ntp time
 
 		azalt = AltAz(location = location, obstime = observingtime)		#create AltAz reference frame
 
@@ -147,12 +145,13 @@ class CommandStation:
 
 		### command station with az/alt coords ###
 
-		self.movebyazal(round(source.az),round(source.alt))
+		self.movebyazal(source.az,source.alt)
 
 	##################################################################
 	'''
 	Method that commands the station to take a single power reading at a single frequency.
 	:para freq: frequency 
+	:return power: float containing the power reading at frequency
 	'''
 	def readpower(self, freq) -> float:
 
@@ -178,6 +177,7 @@ class CommandStation:
 		for e in message:
 			self.sock.send(e.encode('ascii'))
 
+		# currently deprecated
 		'''
 		#receive response from stamp via serial to ethernet converter
 		#stamp sends back one thing at a time, so a loop is necessary to receive all the data
@@ -191,7 +191,7 @@ class CommandStation:
 				break											#TCP socket times out after stamp stops sending
 		'''
 
-		response = self.sock.recv(DEFAULT_BUFFER_SIZE).decode('ascii').rstrip().split()		#receive and format response data
+		response = self.sock.recv(DEFAULT_BUFFER_SIZE).decode('ascii').strip().split()		#receive and format response data
 
 		#close the socket if it hasn't been already closed by the server
 		#only closes if no more data is being received
@@ -213,36 +213,6 @@ class CommandStation:
 			power = gaincor * power * 10	#number 10 used in java code for unknown reasons
 
 		return power
-
-
-
-
-	def sendandreceive(self, message):
-		try:
-			self.sock.connect((self.addr,self.port))
-		except ConnectionError as e:
-			print("Issue connecting to " + self.addr + ":" + str(self.port) + " with message: " + message)
-			print(e.__class__.__name__+": "+str(e))
-			exit(1)
-		except OSError as e:
-			# Catches other errors including bad server address
-			print("Issue connecting to " + self.addr + ":" + str(self.port) + " with message: " + message)
-			print(e.__class__.__name__ + ": " + str(e))
-			exit(1)
-		self.sock.send(message.encode('ascii'))
-
-		returned = self.sock.recv(DEFAULT_BUFFER_SIZE)
-		response = returned.decode('ascii')
-
-		# Close the socket if it hasn't been already closed by the server
-		# Only closes if no more data is being received
-		try:
-			self.sock.shutdown(socket.SHUT_RDWR)
-			self.sock.close()
-		except OSError:
-			pass  # Server already closed socket
-
-		return response
 
 ### main function for testing ###
 
