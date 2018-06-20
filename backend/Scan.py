@@ -71,7 +71,7 @@ class Scan:
 	Method to track and take data points on a single source at a single frequency until a specified time.
 
 	:param source: name of source to track and measure
-	:param freq: frequency at which to measure in MHz
+	:param freq: frequency in MHz at which to measure
 	:param time: unix time at which to stop scanning
 	:return scan: astropy Table object containing a scan of source over time
 	'''
@@ -118,7 +118,7 @@ class Scan:
 	Method to take a drift scan at a single frequency until a specific time.
 
 	:param pos: list containing azimuth and altitude of drift position
-	:param freq: frequency at which to measure in MHz
+	:param freq: frequency in MHz at which to measure
 	:param time: unix time at which to stop scanning
 	:return scan: astropy Table object containing a drift scan
 	'''
@@ -139,7 +139,7 @@ class Scan:
 	'''
 	Method to take a drift scan across the whole station spectrum until a specific time.
 
-	:param pos: tuple containing azimuth and altitude of drift position
+	:param pos: list containing azimuth and altitude of drift position
 	:param time: unix time at which to stop scanning
 	:return spectrum: astropy table object containing a drift scan of spectrum over time
 	'''
