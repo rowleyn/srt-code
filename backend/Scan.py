@@ -19,7 +19,7 @@ class Scan:
 	'''
 	Method to take a single data point at a single frequency for a single source.
 
-	:param pos: list containing azimuth and altitude of scan position
+	:param pos: tuple containing azimuth and altitude of scan position
 	:param freq: frequency in MHz at which to measure
 	:return scan: astropy Table object containing a single power measurement
 	'''
@@ -39,25 +39,21 @@ class Scan:
 		return scan
 
 	'''
-	Method to take data points across the whole station spectrum for a single source.
+	Method to take data points across a spectrum for a single source.
 
-	:param source: list containing azimuth and altitude of scan position
+	:param source: tuple containing azimuth and altitude of scan position
+	:param flimit: tuple containing lower and upper frequency limits in MHz for the scan
+	:param step: frequency step quantity in MHz for the scan
 	:return spectrum: astropy Table object containing a single spectrum measurement
 	'''
-	def singlespectrum(self, pos) -> Table:
-
-		with open('srtconfig.json') as f:			# load in config data
-			stationdata = json.load(f)
-
-		lowf  = stationdata['config']['freqrange']['lower']		# set spectrum range
-		highf = stationdata['config']['freqrange']['upper']
+	def singlespectrum(self, pos, flimit, step) -> Table:
 
 		scan     = Table()										# intialize astropy Table objects to store spectrum data
 		spectrum = Table()
 
 		curtime = getcurrenttime()								# get time of spectrum scan
 
-		for freq in range(lowf,highf,0.04):						# sweep through frequencies in range, taking 40 kHz steps
+		for freq in range(flimit[0], flimit[1], step):						# sweep through frequencies in range, taking 40 kHz steps
 
 			scan = singlescan(pos, freq)						# get scan at current frequency
 
@@ -95,10 +91,12 @@ class Scan:
 	Method to track and take data points on a single source across the whole station spectrum until a specific time.
 
 	:param source: name of source to track and measure
+	:param flimit: tuple containing lower and upper frequency limits in MHz for the scan
+	:param step: frequency step quantity in MHz for the scan
 	:param time: unix time at which to stop scanning
 	:return spectrum: astropy Table object containing a scan of the source's spectrum over time
 	'''
-	def trackspectrum(self, source, time) -> Table:
+	def trackspectrum(self, source, flimit, step, time) -> Table:
 
 		curtime = getcurrenttime()			# get start time of scan
 
@@ -108,7 +106,7 @@ class Scan:
 
 			pos = getsourceazal(source)		# get azal coords for source
 
-			spectrum = vstack([spectrum, singlespectrum(pos)])	# take spectrum and append to the scan
+			spectrum = vstack([spectrum, singlespectrum(pos, flimit, step)])	# take spectrum and append to the scan
 
 			curtime = getcurrenttime()		# update current time
 
@@ -117,7 +115,7 @@ class Scan:
 	'''
 	Method to take a drift scan at a single frequency until a specific time.
 
-	:param pos: list containing azimuth and altitude of drift position
+	:param pos: tuple containing azimuth and altitude of drift position
 	:param freq: frequency in MHz at which to measure
 	:param time: unix time at which to stop scanning
 	:return scan: astropy Table object containing a drift scan
@@ -139,11 +137,13 @@ class Scan:
 	'''
 	Method to take a drift scan across the whole station spectrum until a specific time.
 
-	:param pos: list containing azimuth and altitude of drift position
+	:param pos: tuple containing azimuth and altitude of drift position
+	:param flimit: tuple containing lower and upper frequency limits in MHz for the scan
+	:param step: frequency step quantity in MHz for the scan
 	:param time: unix time at which to stop scanning
 	:return spectrum: astropy table object containing a drift scan of spectrum over time
 	'''
-	def driftspectrum(self, pos, time) -> Table:
+	def driftspectrum(self, pos, flimit, step, time) -> Table:
 
 		curtime = getcurrenttime()			# get start time of scan
 
@@ -151,7 +151,7 @@ class Scan:
 
 		while curtime < time:				# continue scanning until the current time is past the end time
 
-			spectrum = vstack([spectrum, singlespectrum(pos)])	# take spectrum and append to the scan
+			spectrum = vstack([spectrum, singlespectrum(pos, flimit, step)])	# take spectrum and append to the scan
 
 			curtime = getcurrenttime()		# update current time
 
@@ -174,7 +174,7 @@ class Scan:
 	Helper method to get the azimuth and altitude of a source.
 
 	:param source: name of source
-	:return pos: list containing azimuth and altitude of source
+	:return pos: tuple containing azimuth and altitude of source
 	'''
 	def getsourceazal(self, source):
 
@@ -195,9 +195,6 @@ class Scan:
 
 		source = source.transform_to(azalt)								# transform source from ras/dec coords to az/alt coords
 
-		pos = []								# initialize position list
-
-		pos.append(source.az)					# fill position list with azimuth and altitude
-		pos.append(source.al)
+		pos = (source.az, source.al)									# create position tuple
 
 		return pos
