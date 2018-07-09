@@ -1,0 +1,140 @@
+<div>
+
+<!-- Style info that will be pasted into the page. -->
+<div id="style">
+
+	<style id="replace">
+
+		#scan-list {
+			display: flex;
+			flex-direction: column;
+			width: 80%;
+			margin: 1em auto 1em;
+		}
+		.entry > td {
+			border: 1px solid #727272;
+			padding: 4px 6px;
+		}
+		.close {
+			cursor: pointer;
+			display: block;
+			margin: 0 auto;
+		}
+		.ui-dialog .ui-state-error {
+			padding: 0.3em;
+		}
+		.validateTips {
+			border: 1px solid transparent;
+			padding: 0.3em;
+		}
+		#hiddenonstart {
+			display: none;
+		}
+
+	</style>
+
+</div>
+
+<!-- Script block that will be pasted into the page. Will automatically retrieve the script from the server. -->
+<div id = "script">
+
+	<script id="replace">
+		var url = "/static/scan.js";
+		$.getScript( url );
+	</script>
+
+</div>
+
+<!-- Main content that will be pasted into the page. -->
+<div id = "content">
+
+	<!-- Contents packaged inside hidden div to minimize visual flicker on page load. -->
+	<div id="hiddenonstart">
+
+	<!-- Jquery UI dialog pop-up for entering and submitting parameters for a new scan. -->
+	<div id="dialog-form" title="Create new scan">
+		<p class="validateTips">All fields are mandatory.</p>
+
+		<form>
+
+			<p><select id="type">
+				<option value="track" selected>Track</option>
+				<option value="drift">Drift</option>
+			</select></p>
+
+			<div id="source">
+				<p><select id="tracktype">
+					<option value="source">By source</option>
+					<option value="coords">By coords</option>
+				</select></p>
+
+				<p><select id="sourcelist">
+					<option value="no source">Select source</option>
+				</select></p>
+			</div>
+
+			<div id="position">
+				<p><label for="lat">Gal. lat.</label>
+				<input type="text" name="lat" id="lat"></p>
+				<p><label for="lon">Gal. lon.</label>
+				<input type="text" name="lon" id="lon"></p>
+			</div>
+
+			<p><label for="duration">Duration</label></p>
+			<p><input type="text" name="duration" id="duration" placeholder="00h00m00s"></p>
+
+			<p><label for="center">Spectrum Center</label></p>
+			<p><input type="text" name="center" id="center" placeholder="MHz"></p>
+
+			<p><label for="step-num">Step Number</label></p>
+			<p><input type="text" name="step-num" id="step-num" placeholder="positive integer"></p>
+
+			<p><label for="step-size">Step Size</label></p>
+			<p><input type="text" name="step-size" id="step-size" placeholder="MHz"></p>
+
+			<p><label for="name">Scan Name</label></p>
+			<p><input type="text" name="name" id="name" placeholder="max 30 characters"></p>
+
+		</form>
+
+	</div>
+
+	<!-- Table containing the current scan queue, updated automatically by ajax requests. -->
+	<div id="scan-list">
+
+		<table id="queued-scans">
+
+			<thead>
+				<tr class="ui-widget-header">
+					<th>Name</th>
+					<th>Type</th>
+					<th>Source/Position</th>
+					<th>Duration</th>
+					<th>Center</th>
+					<th></th>
+				</tr>
+			</thead>
+
+			<tbody>
+				<tr class="entry">
+					<td id="name">Name</td>
+					<td id="type">Type</td>
+					<td id="source-pos"><div id="sourcename"></div><div id="lat"></div><div id="lon"></div></td>
+					<td id="duration">Duration</td>
+					<td id="center">Center</td>
+					<td><span class="ui-icon ui-icon-circle-close close">Remove/End Scan</span></td>
+					<td hidden id="id"></td>
+				</tr>
+			</tbody>
+
+		</table>
+
+		<button id="create-scan">Create scan</button>
+
+	</div>
+
+	</div>
+
+</div>
+
+</div>

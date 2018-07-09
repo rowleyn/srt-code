@@ -1,6 +1,6 @@
 '''
-A class that performs tracking and drift scans at
-particular frequencies and of the whole station spectrum.
+A class that performs tracking and drift scans
+with parameters acquired from the scan queue.
 
 Author: Nathan Rowley
 Date: June 2018
@@ -9,7 +9,10 @@ Date: June 2018
 import CommandStation
 import json
 import ntplib
+import sqlite3
 from astropy.table import Table, Column, vstack
+
+NTP_SERVER = 'ntp.carleton.edu'		# NTP server for time retrieval. Change to suit your needs
 
 class Scan:
 
@@ -19,143 +22,163 @@ class Scan:
 	'''
 	Method to take a single data point at a single frequency for a single source.
 
-	:param pos: tuple containing azimuth and altitude of scan position
+	:param azal: tuple containing azimuth and altitude of scan position
 	:param freq: frequency in MHz at which to measure
-	:return scan: astropy Table object containing a single power measurement
+	:return scan: float containing a single power measurement
 	'''
-	def singlescan(self, pos, freq) -> Table:
+	def singlescan(self, azal, freq) -> float:
 
-		self.station.movebyazal(pos[0], pos[1])		# move station to scan position
+		self.station.movebyazal(azal[0], azal[1])		# move station to scan position
 
 		scan = self.station.readpower(freq)			# read power at frequency freq
-		curtime = getcurrenttime()					# get time of scan
-		
-		freqcol = Column([freq], name = 'frequency', unit = 'MHz')	# convert lists to astropy Column objects
-		powcol  = Column([scan], name = 'temperature', unit = 'K')
-		timecol = Column([curtime], name = 'time', unit = 's')
-
-		scan = Table((freqcol, powcol, timecol))					# create astropy Table object containing scan data
 
 		return scan
 
 	'''
 	Method to take data points across a spectrum for a single source.
 
-	:param source: tuple containing azimuth and altitude of scan position
-	:param flimit: tuple containing lower and upper frequency limits in MHz for the scan
-	:param step: frequency step quantity in MHz for the scan
-	:return spectrum: astropy Table object containing a single spectrum measurement
+	:param azal: tuple containing azimuth and altitude of scan position
+	:param flimit: tuple containing lower and upper frequency limits in MHz
+	:param step: float containing frequency step quantity in MHz
+	:return data: dictionary containing a single spectrum with start and end times
 	'''
-	def singlespectrum(self, pos, flimit, step) -> Table:
+	def singlespectrum(self, azal, flimit, step) -> dict:
 
-		scan     = Table()										# intialize astropy Table objects to store spectrum data
-		spectrum = Table()
+		spectrum = []
 
-		curtime = getcurrenttime()								# get time of spectrum scan
+		starttime = getcurrenttime()							# get start time of spectrum scan
 
-		for freq in range(flimit[0], flimit[1], step):						# sweep through frequencies in range, taking 40 kHz steps
+		for freq in range(flimit[0], flimit[1], step):			# sweep through frequencies in range with step size step
 
-			scan = singlescan(pos, freq)						# get scan at current frequency
+			spectrum.append(singlescan(azal, freq))				# do single scan at current frequency and append result to spectrum
 
-			scan['time'][1] = curtime							# set time to current time
+		endtime = getcurrenttime()								# get end time of spectrum scan
 
-			spectrum = vstack([spectrum, scan])					# append scan to the spectrum
+		data = {'spectrum': spectrum, 'starttime': starttime, 'endtime': endtime}		# package spectrum and times
 
-		return spectrum
+		return data
 
 	'''
-	Method to track and take data points on a single source at a single frequency until a specified time.
+	Method to track a position and take data for a specific duration.
 
-	:param source: name of source to track and measure
-	:param freq: frequency in MHz at which to measure
+	:param pos: tuple containing galactic latitude and longitude of the position to track
+	:param flimit: tuple containing lower and upper frequency limits in MHz
+	:param step: float containing frequency step quantity in MHz
 	:param time: unix time at which to stop scanning
-	:return scan: astropy Table object containing a scan of source over time
+	:param scanid: id number of the current scan
+	:return trackdata: list containing scan data
 	'''
-	def trackscan(self, source, freq, time) -> Table:
+	def track(self, pos, flimit, step, time, scanid) -> list:
 
-		scan = Table()						# initialize data Table
+		srtdb = sqlite3.connect('srtdata.db')						# establish a connection and cursor into the database
+		srtdb.row_factory = sqlite3.Row
+		cur = srtdb.cursor()
 
-		curtime = getcurrenttime()			# get start time of scan
+		curtime = getcurrenttime()									# get start time of scan
 
-		while curtime < time:				# continue scanning until the current time is past the end time
+		trackdata = []
 
-			pos = getsourceazal(source)		# get azal coords for source
+		while curtime < time:										# continue scanning until current time is past the end time
 
-			scan = vstack([scan, singlescan(pos, freq)])		# take reading and append to the scan
+			scan = cur.execute("SELECT ID FROM QUEUE WHERE ID = ? LIMIT 1", (scanid,)).fetchone()		# try to retrieve the current scan from the queue
 
-			curtime = getcurrenttime()		# update current time
+			if scan == None:										# if scan was not retrieved, it was removed from queue and scan should be stopped
 
-		return scan
+				break
+
+			azal = getsourceazal(pos)								# get current azimuth and altitude of tracked position
+
+			trackdata.append(singlespectrum(azal, flimit, step))	# take a spectrum measurement and append to the scan
+
+			curtime = getcurrenttime()								# update current time
+
+		srtdb.close()
+
+		return trackdata
 
 	'''
-	Method to track and take data points on a single source across the whole station spectrum until a specific time.
+	Method to take data at a single drift position for a specific duration.
 
-	:param source: name of source to track and measure
-	:param flimit: tuple containing lower and upper frequency limits in MHz for the scan
-	:param step: frequency step quantity in MHz for the scan
+	:param pos: tuple containing galactic latitude and longitude of drift position
+	:param flimit: tuple containing lower and upper frequency limits in MHz
+	:param step: float containing frequency step quantity in MHz
 	:param time: unix time at which to stop scanning
-	:return spectrum: astropy Table object containing a scan of the source's spectrum over time
+	:param scanid: id number of the current scan
+	:return driftdata: list containing scan data
 	'''
-	def trackspectrum(self, source, flimit, step, time) -> Table:
+	def drift(self, pos, flimit, step, time, scanid) -> list:
 
-		curtime = getcurrenttime()			# get start time of scan
+		srtdb = sqlite3.connect('srtdata.db')						# establish a connection and cursor into the database
+		srtdb.row_factory = sqlite3.Row
+		cur = srtdb.cursor()
 
-		spectrum = Table()					# initialize data Table
+		curtime = getcurrenttime()									# get start time of scan
 
-		while curtime < time:				# continue scanning until the current time is past the end time
+		driftdata = []
 
-			pos = getsourceazal(source)		# get azal coords for source
+		azal = getazal(pos)											# get azimuth and altitude of the drift position
 
-			spectrum = vstack([spectrum, singlespectrum(pos, flimit, step)])	# take spectrum and append to the scan
+		while curtime < time:										# continue scanning until the current time is past the end time
 
-			curtime = getcurrenttime()		# update current time
+			scan = cur.execute("SELECT ID FROM QUEUE WHERE ID = ? LIMIT 1", (scanid,)).fetchone()		# try to retrieve the current scan from the queue
 
-		return spectrum
+			if scan == None:										# if scan was not retrieved, it was removed from queue and scan should be stopped
 
-	'''
-	Method to take a drift scan at a single frequency until a specific time.
+				break
 
-	:param pos: tuple containing azimuth and altitude of drift position
-	:param freq: frequency in MHz at which to measure
-	:param time: unix time at which to stop scanning
-	:return scan: astropy Table object containing a drift scan
-	'''
-	def driftscan(self, pos, freq, time) -> Table:
+			driftdata.append(singlespectrum(azal, flimit, step))	# take spectrum measurement and append to the scan
 
-		scan = Table()						# initialize data Table
+			curtime = getcurrenttime()								# update current time
 
-		curtime = getcurrenttime()			# get start time of scan
+		srtdb.close()
 
-		while curtime < time:				# continue scanning until the current time is past the end time
+		return driftdata
 
-			scan = vstack([scan, singlescan(pos, freq)])		# take reading and append to the scan
 
-			curtime = getcurrenttime()		# update current time
+	def donextscan():
 
-		return scan
+		srtdb = sqlite3.connect('srtdata.db')									# establish a connection and cursor into the database
+		srtdb.row_factory = sqlite3.Row
+		cur = srtdb.cursor()
 
-	'''
-	Method to take a drift scan across the whole station spectrum until a specific time.
+		nextscan = cur.execute("SELECT * FROM QUEUE LIMIT 1").fetchone()		# retrieve next scan from queue
 
-	:param pos: tuple containing azimuth and altitude of drift position
-	:param flimit: tuple containing lower and upper frequency limits in MHz for the scan
-	:param step: frequency step quantity in MHz for the scan
-	:param time: unix time at which to stop scanning
-	:return spectrum: astropy table object containing a drift scan of spectrum over time
-	'''
-	def driftspectrum(self, pos, flimit, step, time) -> Table:
+		pos = (nextscan['gallat'], nextscan['gallon'])							# get galactic position of scan
 
-		curtime = getcurrenttime()			# get start time of scan
+		center   = nextscan['center']											# get spectrum parameters of scan
+		stepnum  = nextscan['stepnum']
+		stepsize = nextscan['stepsize']
 
-		spectrum = Table()					# initialize data Table
+		offset = (stepnum / 2) * stepsize										# calculate upper and lower frequency limits of scan
+		flower = center - offset
+		fupper = center + offset
 
-		while curtime < time:				# continue scanning until the current time is past the end time
+		duration = re.split('[hms]', nextscan['duration'])						# get duration values of scan
 
-			spectrum = vstack([spectrum, singlespectrum(pos, flimit, step)])	# take spectrum and append to the scan
+		seconds = int(duration[0]) * 60 * 60 + int(duration[1]) * 60 + int(duration[2])
 
-			curtime = getcurrenttime()		# update current time
+		curtime = getcurrenttime()
 
-		return spectrum
+		endtime = curtime + seconds										# calculate the ending time of the scan in unix time
+
+		cur.execute("UPDATE TIMEDONE SET ENDTIME = ?", (endtime,))		# update the TIMEDONE table with the ending time of this scan
+		srtdb.commit()
+
+		if nextscan['type'] == 'track':
+
+			if nextscan['source'] != 'no source':														# if scan has a source selected, use source coords instead
+
+				source = cur.execute("SELECT * FROM SOURCES WHERE NAME = ?", (nextscan['source'],))		# retrieve source data from the database
+
+				pos = (source['lat'], source['lon'])													# change pos to source coords
+
+
+			scandata = track(pos, (flower, fupper), stepsize, endtime, nextscan['id'])					# do a track scan
+
+		else:
+
+			scandata = drift(pos, (flower, fupper), stepsize, endtime, nextscan['id'])					# do a drift scan
+
 
 	'''
 	Helper method to get the current time from an NTP server.
@@ -165,36 +188,39 @@ class Scan:
 	def getcurrenttime(self):
 
 		c = ntplib.NTPClient()
-		ntptime = c.request('ntp.carleton.edu',version = 4)				# get current time from Carleton's NTP server
-		unixtime = ntptime.tx_time - 18000								# convert ntp time to unix time
+		ntptime = c.request(NTP_SERVER, version = 4)				# get current time from Carleton's NTP server
+		unixtime = ntptime.tx_time									# convert ntp time to unix time
 
 		return unixtime
 
 	'''
-	Helper method to get the azimuth and altitude of a source.
+	Helper method to get the azimuth and altitude of a position in galactic coords.
 
-	:param source: name of source
-	:return pos: tuple containing azimuth and altitude of source
+	:param pos: tuple containing galactic latitude and longitude
+	:return azal: tuple containing azimuth and altitude
 	'''
-	def getsourceazal(self, source):
+	def getazal(self, pos):
 
-		with open('srtconfig.json') as f:								# get station data from config
-			stationdata = json.load(f)
+		srtdb = sqlite3.connect('srtdata.db')	# establish a connection and cursor into the database
+		srtdb.row_factory = sqlite3.Row
+		cur = srtdb.cursor()
 
-		source = stationdata['config']['sources'][sourcename]			# look up source by name
-		source = SkyCoord(source['ras'],source['dec'],frame = 'icrs')	# convert source into astropy SkyCoord object for coord transformation
+		configdata = cur.execute("SELECT * FROM CONFIG").fetchone()						# retrieve config data from the database
 
-		location = stationdata['config']['station']																# look up station location data
-		location = EarthLocation(lat = location['lat'], lon = location['lon'], height = location['height']) 	# convert location into astropy EarthLocation
+		position = SkyCoord(pos[0], pos[1], frame = 'galactic')							# convert position into astropy SkyCoord object for coord transformation
 
-		unixtime = getcurrenttime()										# get curent time to establish AltAz reference frame
+		location = EarthLocation(lat = configdata['lat'], lon = configdata['lon'], height = configdata['height']) 	# convert location into astropy EarthLocation
 
-		observingtime = Time(unixtime,format = 'unix')					# create astropy Time object using converted ntp time
+		srtdb.close()														# database connection no longer needed
 
-		azalt = AltAz(location = location, obstime = observingtime)		# create AltAz reference frame
+		unixtime = getcurrenttime()											# get curent time to establish AltAz reference frame
 
-		source = source.transform_to(azalt)								# transform source from ras/dec coords to az/alt coords
+		observingtime = Time(unixtime, format = 'unix')						# create astropy Time object using converted ntp time
 
-		pos = (source.az, source.al)									# create position tuple
+		azalframe = AltAz(location = location, obstime = observingtime)		# create AltAz reference frame
 
-		return pos
+		position = position.transform_to(azalframe)							# transform position from galactic coords to az/alt coords
+
+		azal = (position.az, position.al)									# create azal tuple
+
+		return azal

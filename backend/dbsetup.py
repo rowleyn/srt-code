@@ -1,0 +1,74 @@
+
+import sqlite3
+
+srt = sqlite3.connect('srtdata.db')
+
+
+srt.execute('''CREATE TABLE CONFIG(
+	NAME		TEXT	NOT NULL,
+	LAT			REAL	NOT NULL,
+	LON			REAL	NOT NULL,
+	HEIGHT		REAL	NOT NULL,
+	AZ			REAL	NOT NULL,
+	AL			REAL	NOT NULL,
+	AZLOWER		REAL	NOT NULL,
+	AZUPPER		REAL	NOT NULL,
+	ALLOWER		REAL	NOT NULL,
+	ALUPPER		REAL	NOT NULL,
+	FREQLOWER	REAL	NOT NULL,
+	FREQUPPER	REAL	NOT NULL);''')
+
+srt.execute('''CREATE TABLE QUEUE(
+	ID INT PRIMARY KEY	NOT NULL,
+	NAME		TEXT	NOT NULL,
+	TYPE		TEXT	NOT NULL,
+	SOURCE		TEXT	NOT NULL,
+	GALLAT		REAL	NOT NULL,
+	GALLON		REAL	NOT NULL,
+	DURATION	TEXT	NOT NULL,
+	CENTER		REAL	NOT NULL,
+	STEPNUM		INT		NOT NULL,
+	STEPSIZE	REAL	NOT NULL);''')
+
+srt.execute('''CREATE TABLE SOURCES(
+	NAME TEXT PRIMARY KEY	NOT NULL,
+	GALLAT			REAL	NOT NULL,
+	GALLON			REAL	NOT NULL);''')
+
+srt.execute('''CREATE TABLE TIMEDONE(
+	ENDTIME	INT		NOT NULL);''')
+
+srt.execute("INSERT INTO TIMEDONE (ENDTIME) \
+		VALUES	(0)");
+
+srt.execute("INSERT INTO CONFIG (NAME,LAT,LON,HEIGHT,AZ,AL,AZLOWER,AZUPPER,ALLOWER,ALUPPER,FREQLOWER,FREQUPPER) \
+		VALUES	('Carleton Small Radio Telescope', 0, 0, 0, 180, 90, 0, 360, 0, 180, 0, 10000 )");
+
+srt.execute("INSERT INTO QUEUE (ID,NAME,TYPE,SOURCE,GALLAT,GALLON,DURATION,CENTER,STEPNUM,STEPSIZE) \
+		VALUES	(1234567890, 'test1', 'track', 'crab', 0, 0, '01h01m01s', 1440, 20, 0.04 )");
+
+srt.execute("INSERT INTO QUEUE (ID,NAME,TYPE,SOURCE,GALLAT,GALLON,DURATION,CENTER,STEPNUM,STEPSIZE) \
+		VALUES	(0987654321, 'test2', 'drift', 'source', 0, 0, '01h01m01s', 1440, 20, 0.04 )");
+
+srt.execute("INSERT INTO SOURCES (NAME,GALLAT,GALLON) \
+		VALUES	('test', 0, 0)");
+
+srt.commit()
+
+stationdata = srt.execute("SELECT * FROM CONFIG")
+for row in stationdata:
+	print(row)
+
+scans = srt.execute("SELECT * FROM QUEUE")
+for row in scans:
+	print(row)
+
+sourcelist = srt.execute("SELECT * FROM SOURCES")
+for source in sourcelist:
+	print(source)
+
+endtimes = srt.execute("SELECT * FROM TIMEDONE")
+for endtime in endtimes:
+	print(endtime)
+
+srt.close()

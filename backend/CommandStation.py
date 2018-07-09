@@ -12,6 +12,7 @@ import sys
 from astropy.coordinates import SkyCoord, EarthLocation, AltAz
 from astropy.time import Time
 import ntplib
+import sqlite3
 
 ### change these depending on which converter is attached to the telescope and how it is configured ###
 
@@ -40,10 +41,14 @@ class CommandStation:
 
 		### get current station position ###
 
-		with open('srtconfig.json') as f:				# get station data from config
-			station = json.load(f)
-		curaz = station['config']['azal']['azimuth']	# get current azimuth
-		cural = station['config']['azal']['altitude']	# get current altitude
+		srtdb = sqlite3.connect('srtdata.db')	# establish a connection and cursor into the database
+		srtdb.row_factory = sqlite3.Row
+		cur = srtdb.cursor()
+
+		configdata = cur.execute("SELECT * FROM CONFIG").fetchone()			# retrieve config data from the database
+
+		curaz = configdata['az']				# get current azimuth and altitude
+		cural = configdata['al']
 
 		print(str(curaz)+' '+str(cural))
 
@@ -84,13 +89,13 @@ class CommandStation:
 			response = self.sock.recv(DEFAULT_BUFFER_SIZE).decode('ascii').strip().split()		# receive and format response data
 			print('reply received')
 			
-			if response[0] == 'M':						# response indicates successful completion of movement
+			if response[0] == 'M':								# response indicates successful completion of movement
 				if not azset:
 					azset = True
 				elif not alset:
 					alset = True
-			else:										# response indicates stamp timeout, must resend message with updated values
-				if response[1] != response[3]:			# update count based on returned value
+			else:												# response indicates stamp timeout, must resend message with updated values
+				if response[1] != response[3]:					# update count based on returned value
 					if not azset:
 						azcount = azcount - int(response[1])
 					elif not alset:
@@ -103,11 +108,10 @@ class CommandStation:
 
 		### update current station position ###
 
-		station['config']['azal']['azimuth'] = curaz		# update srtconfig.json with new azimuth and altitude values
-		station['config']['azal']['altitude'] = cural
-		
-		with open('srtconfig.json','w') as f:				# rewrite srtconfig.json with new information
-			json.dump(station,f,indent=4)
+		cur.execute("UPDATE CONFIG SET AZ = ?, AL = ?", (curaz, cural))		# update position values in database
+		srtdb.commit()
+
+		srtdb.close()														# database connection no longer needed
 
 		### close socket ###
 
@@ -121,21 +125,25 @@ class CommandStation:
 	'''
 	Method that takes a source from the config sources list and moves the station to the position of that source.
 
-	:param sourcename: name of source as labelled in the srtconfig.json sources list
+	:param sourcename: name of source as labelled in the SOURCES table in srtdata.db
 	:return:
 	'''
 	def movebysource(self, sourcename) -> None:
 
 		### get current station information ###
 
-		with open('srtconfig.json') as f:								# get station data from config
-			station = json.load(f)
+		srtdb = sqlite3.connect('srtdata.db')	# establish a connection and cursor into the database
+		srtdb.row_factory = sqlite3.Row
+		cur = srtdb.cursor()
 
-		source = station['config']['sources'][sourcename]				# look up source by name
-		source = SkyCoord(source['ras'],source['dec'],frame = 'icrs')	# convert source into astropy SkyCoord object for coord transformation
+		configdata = cur.execute("SELECT * FROM CONFIG").fetchone()							# retrieve config data from the database
+		sourcedata = cur.execute("SELECT * FROM SOURCES WHERE NAME = ?", (sourcename,))		# retrieve source data from the database
 
-		location = station['config']['station']																	# look up station location data
-		location = EarthLocation(lat = location['lat'], lon = location['lon'], height = location['height']) 	# convert location into astropy EarthLocation
+		source = SkyCoord(sourcedata['ras'],sourcedata['dec'],frame = 'icrs')				# convert source into astropy SkyCoord object for coord transformation
+
+		location = EarthLocation(lat = configdata['lat'], lon = configdata['lon'], height = configdata['height']) 	# convert location into astropy EarthLocation
+
+		srtdb.close()													# database connection no longer needed
 
 		c = ntplib.NTPClient()
 		ntptime = c.request('ntp.carleton.edu',version = 4)				# get current time from Carleton's NTP server
@@ -182,7 +190,7 @@ class CommandStation:
 		for e in message:
 			self.sock.send(e.encode('ascii'))
 
-		# currently deprecated
+		# deprecated
 		'''
 		# receive response from stamp via serial to ethernet converter
 		# stamp sends back one thing at a time, so a loop is necessary to receive all the data
