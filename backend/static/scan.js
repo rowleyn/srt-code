@@ -1,43 +1,61 @@
+
 $( function() {
 	
 	// initial setup
-	var dialog,	tips = $( ".validateTips" ),
-		type = $( "#dialog-form #type" ), duration = $( "#dialog-form #duration" ), center = $( "#dialog-form #center" ), step_num = $( "#dialog-form #step-num" ), step_size = $( "#dialog-form #step-size" ),
-		name = $( "#dialog-form #name" ), position = $( "#dialog-form #position" ), lat = position.find( "#lat" ), lon = position.find( "#lon" ), source = $( "#dialog-form #source" ), sourcelist = $( "#dialog-form #sourcelist" );
+	var scandialog,	searchdialog, tips = $( ".validateTips" ),
+		type = $( "#dialog-scanform #type" ), duration = $( "#dialog-scanform #duration" ), freqlower = $( "#dialog-scanform #freqlower"), freqlower = $( "#dialog-scanform #frequpper" ),
+		name = $( "#dialog-scanform #name" ), position = $( "#dialog-scanform #position" ), ras = position.find( "#dialog-scanform #ras" ), dec = position.find( "#dialog-scanform #dec" ),
+		step_num = $( "#dialog-scanform #stepnum" ), source = $( "#dialog-scanform #source" ), sourcelist = $( "#dialog-scanform #sourcelist" );
 
-	var allFields = $( [] ).add( type ).add( duration ).add( center ).add( step_num ).add( step_size).add( name ).add( lat ).add( lon ).add( sourcelist )
+	var allFields = $( [] ).add( type ).add( duration ).add( freqlower ).add( frequpper ).add( step_num ).add( name ).add( ras ).add( dec ).add( sourcelist )
 
 	position.hide();
 	source.show();
 
-	// a template for adding new rows to the queue table
+	// template for adding new rows to the queue table
 	var scanlistTemplate = `<tr class="entry">
 								<td id="name">Name</td>
 								<td id="type">Type</td>
-								<td id="source-pos"><div id="sourcename"></div><div id="lat"></div><div id="lon"></div></td>
-								<td id="duration">Duration</td>
-								<td id="center">Center</td>
-								<td><span class="ui-icon ui-icon-circle-close close">Remove/End Scan</span></td>
+								<td id="source-pos"><div id="sourcename"></div><div id="ras"></div><div id="dec"></div></td>
+								<td id="times"><div id="start"></div><div id="end"></div></td>
+								<td id="freqrange"><div id="freqlower"></div><div id="frequpper"></div></td>
+								<td><span class="ui-icon ui-icon-circle-close close">Cancel Scan</span></td>
 								<td hidden id="id"></td>
 							</tr>`
+
+	// template for adding new scans to the search list
+	var searchlistTemplate = 	`<tr class="entry">
+									<td><input type="checkbox"></td>
+									<td id="scanname">name</td>
+									<td id="date">00/00/00</td>
+									<td hidden id="id"></id>
+								</tr>`
+
+
+	var historylistTemplate = 	`<tr class="history-entry">
+									<td id="name">Name</td>
+									<td id="type">Type</td>
+									<td id="date">Date</td>
+									<td id="status">Success</td>
+								</tr>`
 
 
 	/*
 		Sets up the jquery ui dialog form for adding new scans.
 	*/
-	dialog = $( "#dialog-form" ).dialog({
+	scandialog = $( "#dialog-scanform" ).dialog({
 		autoOpen: false,
 		modal: true,
 		buttons: {
-			"Queue scan": queueScan,
+			"Submit scan": submitScan,
 			Cancel: function() {
 
-				dialog.dialog( "close" );
+				scandialog.dialog( "close" );
 			}
 		},
 		close: function() {
 
-			$( "input[type=text], textarea").val("");
+			$( "input[type=text], textarea" ).val("");
 			if ( type.val() === "drift" ) {
 
 				position.hide();
@@ -54,7 +72,7 @@ $( function() {
 
 		$.post( "/sources", function( response ) {
 
-			sourcelist.html( "<option value='no source'>Select source</option>");
+			sourcelist.html( "<option value='no source'>Select source</option><option value='sun'>Sun</option>");
 
 			for (var i = 0; i < response.length; i++) {
 
@@ -63,7 +81,7 @@ $( function() {
 			
 		}, "json");
 
-		dialog.dialog( "open" );
+		scandialog.dialog( "open" );
 	});
 
 	// set up dynamic changing of the form based on selected scan type
@@ -73,8 +91,9 @@ $( function() {
 
 			position.hide();
 			source.show();
-			$( lat, "textarea" ).val("");
-			$( lon, "textarea" ).val("");
+			sourcelist.show();
+			$( ras, "textarea" ).val("");
+			$( dec, "textarea" ).val("");
 		}
 		else {
 
@@ -91,8 +110,8 @@ $( function() {
 
 			position.hide();
 			sourcelist.show();
-			$( lat, "textarea" ).val("");
-			$( lon, "textarea" ).val("");
+			$( ras, "textarea" ).val("");
+			$( dec, "textarea" ).val("");
 		}
 		else {
 
@@ -102,12 +121,183 @@ $( function() {
 		};
 	});
 
+	$( "#search-scans" ).button().on( "click", function() {
+
+		searchdialog.dialog( "open" );
+	});
+
+	searchdialog = $( "#dialog-searchform" ).dialog({
+		width: 800,
+		height: 500,
+		autoOpen: false,
+		modal: true,
+		open: function() {
+
+			$( "#dialog-searchform .validateTips" ).hide();
+		},
+		close: function() {
+
+			$( "input[type=text], textarea" ).val( "" );
+			$( "#dialog-searchform #year" ).val( "any" );
+			$( "#dialog-searchform #month" ).val( "any" );
+			$( "#search-results tbody" ).html( "<tr><td></td><td></td><td></td>></tr>" )
+			$( "#download" ).button( "disable" );
+			$( "#delete" ).button( "disable" );
+			$( "#dialog-searchform #name" ).removeClass( "ui-state-error" );			
+		}
+	});
+
+	$( "#dialog-searchform #search" ).button().on( "click", function( event ) {
+
+		event.preventDefault();
+		searchScans();
+	});
+
+	$( "#dialog-searchform #download" ).button().on( "click", function( event ) {
+
+		event.preventDefault();
+		checkedentries = $( "#search-results tbody .entry" ).has( "input:checked" );
+		if ( checkedentries.length !== 0 ) {
+
+			var scanids = [];
+
+			for ( var i = 0; i < checkedentries.length; i++ ) {
+
+				scanids.push( $( checkedentries[i] ).find( "#id" ).html() );
+			};
+
+			var listjson = JSON.stringify( scanids );
+
+			fetch( "/downloadscans", { method: "POST", cache: "no-store", body: listjson } ).then( function( response ) {
+
+				response.blob().then( function( blob ) {
+
+					var link = document.createElement( "a" );
+					link.href = window.URL.createObjectURL( blob );
+					link.download = "scans.zip";
+
+					document.body.appendChild( link );
+
+					link.click()
+
+					document.body.removeChild( link );
+
+					window.URL.revokeObjectURL( blob );	
+				});
+			});
+		};
+	});
+
+	$( "#dialog-searchform #delete" ).button().on( "click", function( event ) {
+
+		event.preventDefault();
+		checkedentries = $( "#search-results tbody .entry" ).has( "input:checked" );
+		if( checkedentries.length !== 0 ) {
+
+			var scanids = [];
+
+			for ( var i = 0; i < checkedentries.length; i++ ) {
+
+				scanids.push( $( checkedentries[i] ).find( "#id" ).html() );
+			};
+
+			var listjson = JSON.stringify( scannames );
+
+			$.post( "/deletescans", listjson, function( response ) {
+
+				checkedentries.remove();
+
+			}, "json");
+		};
+	});
+
+	$( "#dialog-searchform #checkall" ).on( "click", function() {
+
+		if ( $( "#checkall:checked" ).length !== 0 ) {
+
+			$( "#search-results tbody .entry input:not(:checked)" ).prop( "checked", true );
+		}
+		else {
+
+			$( "#search-results tbody .entry input:checked" ).prop( "checked", false );
+		};
+	});
+
 	// reveals page contents after jquery ui objects have been set up
 	$( "#hiddenonstart" ).show();
 
 	// start running self-recursive loop() function to update scan queue
 	loop();
 
+	function updateHistory() {
+
+		$.post( "/gethistory", function( response ) {
+
+			$( "#scan-history tbody" ).empty();
+
+			for ( var i = 0; i < response.length; i++ ) {
+
+				var newentry = historylistTemplate;
+				newentry = $( newentry );
+				newentry.find( "#name" ).html( response[i]["name"] );
+				newentry.find( "#type" ).html( response[i]["type"] );
+				newentry.find( "#date" ).html( response[i]["date"] );
+				newentry.find( "#status" ).html( response[i]["status"] );
+
+				if ( response[i]["status"] === "complete" ) {
+
+					newentry.find( "#status" ).addClass( "success" );
+				}
+				else {
+
+					newentry.find( "#status" ).addClass( "failure" );
+				};
+
+				$( "#scan-history tbody" ).append( newentry );
+			};
+
+		}, "json");
+	}
+
+	function searchScans() {
+
+		var valid = true;
+
+		valid = valid && checkRegexp( $( "#dialog-searchform #name" ), /.{0,30}/, "Name must be no more than 30 characters long." );
+
+		$( "#dialog-searchform .validateTips" ).show();
+
+		if ( valid ) {
+
+			var searchparams = { "name": $( "#dialog-searchform #name" ).val(), "month": $( "#dialog-searchform #month" ).val(), "year": $( "#dialog-searchform #year" ).val() };
+
+			var searchjson = JSON.stringify( searchparams );
+
+			$.post( "/searchscans", searchjson, function( response ) {
+
+				updateSearchlist( response );
+
+			}, "json");
+
+		};
+	}
+
+	function updateSearchlist( scanlist ) {
+
+		$( "#search-results tbody" ).empty();
+
+		for ( var i = 0; i < scanlist.length; i++ ) {
+
+			var newentry = searchlistTemplate;
+			newentry = $( newentry );
+			newentry.find( "#scanname" ).html( scanlist[i]["name"] );
+			newentry.find( "#date" ).html( scanlist[i]["date"] );
+			newentry.find( "#id" ).html( scanlist[i]["id"] );
+
+			// append the new row to the table
+			$( "#search-results tbody" ).append( newentry );
+		};
+	}
 
 	// simple function for generating random numbers
 	function getRndInteger(min, max) {
@@ -119,33 +309,30 @@ $( function() {
 		Builds json containing a new scan populated from the jquery ui dialog form.
 		Posts the new scan to the server using ajax. 
 	*/
-	function queueScan() {
-
-		// generate an id for the scan
-		var randid = getRndInteger(1,1000000000000)
+	function submitScan() {
 
 		// make sure position is not undefined if it is unused
 		if ( $( "#tracktype" ).val() === "source" ) {
 
-			position.find( "#lat" ).val( 0 );
-			position.find( "#lon" ).val( 0 );
+			position.find( "#ras" ).val( "0h0m0s" );
+			position.find( "#dec" ).val( 0 );
 		}
 
 		// submit form if it is valid
 		if ( validateForm() ) {
 
 			// build javascript object with scan parameters
-			var scanvalues = { "name": name.val(), "type": type.val(), "source": sourcelist.val(), "lat": lat.val(), "lon": lon.val(),
-								"duration": duration.val(), "center": center.val(), "stepnumber": step_num.val(), "stepsize": step_size.val(), "id":randid };
+			var scanvalues = { "name": name.val(), "type": type.val(), "source": sourcelist.val(), "ras": ras.val(), "dec": dec.val(),
+								"duration": duration.val(), "freqlower": freqlower.val(), "frequpper": frequpper.val(), "stepnumber": step_num.val()};
 
 			// convert javascript object to json
 			var scanjson = JSON.stringify( scanvalues );
 
 			// ajax post request uploading the scan
 			// uses the response to update the queue table
-			$.post( "/uploadscan", scanjson, function( response ) {
+			$.post( "/submitscan", scanjson, function( response ) {
 
-				updateQueue( response );
+				updateSchedule( response );
 
 			}, "json");
 
@@ -155,51 +342,75 @@ $( function() {
 	}
 
 	/*
-		Populates the queue table with data received from the server.
+		Populates the acive and schedule tables with data received from the server.
 	*/
-	function updateQueue( queuedata ) {
+	function updateSchedule( scheduledata ) {
 
-		// clear the table for repopulation
-		$( "#queued-scans tbody" ).empty();
+		// clear the tables for repopulation
+		$( "#scheduled-scans tbody" ).empty();
+		$( "#active-scan tbody" ).empty();
+
+		var active_set = false;
 
 		// build a new table row from the template and scan params
-		for ( var i = 0; i < queuedata.length; i++ ) {
+		for ( var i = 0; i < scheduledata.length; i++ ) {
 
 			var newentry =  scanlistTemplate;
 			newentry = $( newentry );
-			newentry.find( "#name" ).html( queuedata[i]["name"] );
-			newentry.find( "#type" ).html( queuedata[i]["type"] );
-			if ( queuedata[i]["type"] === "track" ) {
+			newentry.find( "#name" ).html( scheduledata[i]["name"] );
+			newentry.find( "#type" ).html( scheduledata[i]["type"] );
+			if ( scheduledata[i]["type"] === "track" ) {
 
-				if ( queuedata[i]["source"] === "no source" ) {
+				if ( scheduledata[i]["source"] === "no source" ) {
 
-					newentry.find( "#source-pos" ).find( "#lat" ).html( "Gal. lat: " + queuedata[i]["lat"] );
-					newentry.find( "#source-pos" ).find( "#lon" ).html( "Gal. lon: " + queuedata[i]["lon"] );
+					newentry.find( "#source-pos" ).find( "#ras" ).html( "RA: " + scheduledata[i]["ras"] );
+					newentry.find( "#source-pos" ).find( "#dec" ).html( "Dec: " + scheduledata[i]["dec"] );
 				}
 				else {
 
-					newentry.find( "#source-pos #sourcename" ).html( queuedata[i]["source"] );
+					newentry.find( "#source-pos #sourcename" ).html( scheduledata[i]["source"] );
 				}
 			}
 			else {
 
-				newentry.find( "#source-pos" ).find( "#lat" ).html( "Gal. lat: " + queuedata[i]["lat"] );
-				newentry.find( "#source-pos" ).find( "#lon" ).html( "Gal. lon: " + queuedata[i]["lon"] );
+				newentry.find( "#source-pos" ).find( "#ras" ).html( "RA: " + scheduledata[i]["ras"] );
+				newentry.find( "#source-pos" ).find( "#dec" ).html( "Dec: " + scheduledata[i]["dec"] );
 			};
-			newentry.find( "#duration" ).html( queuedata[i]["duration"] );
-			newentry.find( "#center" ).html( queuedata[i]["center"] );
-			newentry.find( "#id" ).html( queuedata[i]["id"] );
+			newentry.find( "#times" ).find( "#start" ).html( "Start: " + scheduledata[i]["starttime"] );
+			newentry.find( "#times" ).find( "#end" ).html( "End: " + scheduledata[i]["endtime"] );
+			newentry.find( "#freqrange" ).find( "#freqlower" ).html( "Min freq: " + scheduledata[i]["freqlower"] );
+			newentry.find( "#freqrange" ).find( "#frequpper" ).html( "Max freq: " + scheduledata[i]["frequpper"] );
+			newentry.find( "#id" ).html( scheduledata[i]["id"] );
 
-			// append the new row to the table
-			$( "#queued-scans tbody" ).append( newentry );
+			// display the first scan in the queue as the active scan
+			if ( !active_set ) {
+
+				if ( scheduledata[i]['current'] === true ):
+
+					$( "#active-scan tbody" ).append( newentry );
+
+					$( "#active-scan .close" ).on( "click", function() {
+
+						var scanid = $( this ).closest( ".entry" ).find( "#id" ).html();
+
+						descheduleScan( scanid );
+					});
+
+				active_set = true;
+			}
+			// display the rest of the scans as the queue
+			else {
+				
+				$( "#scheduled-scans tbody" ).append( newentry );
+			};
 		};
 
 		// set event listeners on the close icons of each row
-		$( ".close" ).on( "click", function() {
+		$( "#scheduled-scans .close" ).on( "click", function() {
 
 			var scanid = $( this ).closest( ".entry" ).find( "#id" ).html();
 
-			removeScan( scanid );
+			descheduleScan( scanid );
 		});
 
 	}
@@ -224,20 +435,20 @@ $( function() {
 			}
 			else {
 
-				valid = valid && checkRegexp( lat, /-?[0-9]+\.?[0-9]*/, "Latitude must be a real number." ) && checkSize( lat, "latitude", -90, 90 );
-				valid = valid && checkRegexp( lon, /[0-9]+\.?[0-9]*/, "Longitude must be a real number." ) && checkSize( lon, "longitude", 0, 360 );
+				valid = valid && checkRegexp( ras, /(?:[0-9]|1\d|2[0-4])h(?:[0-9]|[1-5]\d|60)m(?:[0-9]|[1-5]\d|60)s/, "Right ascension must be specified in sidereal time." );
+				valid = valid && checkRegexp( dec, /-?[0-9]+\.?[0-9]*/, "Declination must be a real number." ) && checkSize( lon, "declination", -90, 90 );
 			};
 		}
 		else {
 
-			valid = valid && checkRegexp( lat, /-?[0-9]+\.?[0-9]*/, "Latitude must be a real number." ) && checkSize( lat, "latitude", -90, 90 );
-			valid = valid && checkRegexp( lon, /[0-9]+\.?[0-9]*/, "Longitude must be a real number." ) && checkSize( lon, "longitude", 0, 360 );
+			valid = valid && checkRegexp( ras, /(?:[0-9]|1\d|2[0-4])h(?:[0-9]|[1-5]\d|60)m(?:[0-9]|[1-5]\d|60)s/, "Right ascension must be specified in sidereal time." );
+			valid = valid && checkRegexp( dec, /-?[0-9]+\.?[0-9]*/, "Declination must be a real number." ) && checkSize( lon, "declination", -90, 90 );
 		}
 
 		valid = valid && checkRegexp( duration, /[0-9]{2}h[0-9]{2}m[0-9]{2}s/, "Duration must be in the form '00h00m00s'." );
-		valid = valid && checkRegexp( center, /[0-9]+\.?[0-9]*/, "Center frequency must be a real number." ) && checkSize( center, "center frequency", 0, 10000 );
-		valid = valid && checkRegexp( step_num, /[0-9]+/, "Step number must be a positive integer." ) && checkSize( step_num, "step number", 1, 1000000 );
-		valid = valid && checkRegexp( step_size, /[0-9]+\.?[0-9]*/, "Step size must be a position real number." ) && checkSize( step_size, "step size", 0.04, 100 );
+		valid = valid && checkRegexp( freqlower, /[0-9]+\.?[0-9]*/, "Minimum frequency must be a real number." ) && checkSize( freqlower, "minimum frequency", 0, 10000 );
+		valid = valid && checkRegexp( freqlower, /[0-9]+\.?[0-9]*/, "Maximum frequency must be a real number." ) && checkSize( freqlower, "maximum frequency", 0, 10000 );
+		valid = valid && checkRegexp( step_num, /1[0-9]*/, "Step number must be a positive integer." ) && checkSize( step_num, "step number", 1, 1000000 );
 		valid = valid && checkRegexp( name, /.{1,30}/, "Name must be no more than 30 characters long." );
 
 		return valid;
@@ -283,26 +494,26 @@ $( function() {
 	}
 
 	/*
-		Ajax request to get scan queue from the server and update the table.
+		Ajax request to get scan schedule from the server and update the table.
 	*/
-	function getQueue() {
+	function getSchedule() {
 
-		$.post( "/queue", function( response ) {
+		$.post( "/schedule", function( response ) {
 
-			updateQueue( response );
+			updateSchedule( response );
 
 		}, "json" );
 	}
 
 	/*
-		Ajax request to remove a scan from the queue and update the table
-		with the new queue.
+		Ajax request to remove a scan from the schedule and update the table
+		with the new schedule.
 	*/
-	function removeScan( id ) {
+	function descheduleScan( id ) {
 
-		$.post( "/removescan", id, function( response ) {
+		$.post( "/deschedulescan", id, function( response ) {
 
-			updateQueue( response );
+			updateSchedule( response );
 
 		}, "json");
 	}
@@ -313,7 +524,8 @@ $( function() {
 	*/
 	function loop() {
 
-		getQueue();
+		getSchedule();
+		updateHistory();
 
 		if ( $( ".navmenu .current" )[0] === $( ".navmenu #scan")[0] ) {
 

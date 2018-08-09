@@ -73,17 +73,16 @@ main > p {
 	text-align: left;
 	padding-left: 1em;
 }
-.statusbar > #sourcedrift {
+.statusbar > #scaninfo {
 	text-align: left;
 	padding-left: 1em;
+	padding-right: 1em;
 }
-.statusbar > #latlon {
-	text-align: left;
-	padding-left: 1em;
-}
-.statusbar > #center {
-	text-align: left;
-	padding-left: 1em;
+
+
+/* Style for the warning dialog. */
+.no-close .ui-dialog-titlebar-close {
+	display: none;
 }
 
 

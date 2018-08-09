@@ -11,7 +11,7 @@
 			width: 80%;
 			margin: 1em auto 1em;
 		}
-		.entry > td {
+		#scan-list .entry > td {
 			border: 1px solid #727272;
 			padding: 4px 6px;
 		}
@@ -29,6 +29,44 @@
 		}
 		#hiddenonstart {
 			display: none;
+		}
+		#search-scans {
+			margin-left: 10%;
+		}
+		#dialog-searchform {
+			display: flex;
+		}
+		#dialog-searchform form {
+			margin: 0 1em;
+			flex: 1;
+		}
+		#results-section {
+			margin: 0 1em;
+			flex: 1;
+		}
+		#search-results {
+			border-collapse: collapse;
+			width: 100%;
+		}
+		#search-results .entry {
+			border-bottom: 1px solid #ddd;
+		}
+		#search-results .entry #scanname {
+			border-left: 1px solid #ddd;
+			border-right: 1px solid #ddd;
+		}
+		#search-results td {
+			padding: 4px 5px;
+		}
+		#search-results th {
+			text-align: left;
+			padding: 4px 4px;
+		}
+		.success {
+			background-color: #2b821a;
+		}
+		.failure {
+			background-color: #a31a1a;
 		}
 
 	</style>
@@ -51,8 +89,98 @@
 	<!-- Contents packaged inside hidden div to minimize visual flicker on page load. -->
 	<div id="hiddenonstart">
 
+	<!-- Table containing the current scan queue, updated automatically by ajax requests. -->
+	<div id="scan-list">
+
+		<h3>Active Scan</h3>
+
+		<table id="active-scan">
+
+			<thead>
+				<tr class="ui-widget-header">
+					<th>Name</th>
+					<th>Type</th>
+					<th>Source/Position</th>
+					<th>Start/End Time</th>
+					<th>Frequency</th>
+					<th></th>
+				</tr>
+			</thead>
+
+			<tbody>
+				<tr class="entry">
+					<td id="name">Name</td>
+					<td id="type">Type</td>
+					<td id="source-pos"><div id="sourcename"></div><div id="ras"></div><div id="dec"></div></td>
+					<td id="times"><div id="start"></div><div id="end"></div></td>
+					<td id="freqrange">Frequency</td>
+					<td><span class="ui-icon ui-icon-circle-close close">Cancel Scan</span></td>
+				</tr>
+			</tbody>
+
+		</table>
+
+		<h3>Scan Schedule</h3>
+
+		<table id="scheduled-scans">
+
+			<thead>
+				<tr class="ui-widget-header">
+					<th>Name</th>
+					<th>Type</th>
+					<th>Source/Position</th>
+					<th>Start/End Time</th>
+					<th>Frequency</th>
+					<th></th>
+				</tr>
+			</thead>
+
+			<tbody>
+				<tr class="entry">
+					<td id="name">Name</td>
+					<td id="type">Type</td>
+					<td id="source-pos"><div id="sourcename"></div><div id="ras"></div><div id="dec"></div></td>
+					<td id="times"><div id="start"></div><div id="end"></div></td>
+					<td id="freqrange">Frequency</td>
+					<td><span class="ui-icon ui-icon-circle-close close">Cancel Scan</span></td>
+					<td hidden id="id"></td>
+				</tr>
+			</tbody>
+
+		</table>
+
+		<button id="create-scan">Create scan</button>
+
+		<h3>Scan History</h3>
+
+		<table id="scan-history">
+
+			<thead>
+				<tr class="ui-widget-header">
+					<th>Name</th>
+					<th>Type</th>
+					<th>Date</th>
+					<th>Status</th>
+				</tr>
+			</thead>
+
+			<tbody>
+				<tr class="history-entry success">
+					<td id="name">Name</td>
+					<td id="type">Type</td>
+					<td id="date">Date</td>
+					<td id="status">Success</td>
+				</tr>
+			</tbody>
+
+		</table>
+
+	</div>
+
+	<p><button id="search-scans">Search scans</button></p>
+
 	<!-- Jquery UI dialog pop-up for entering and submitting parameters for a new scan. -->
-	<div id="dialog-form" title="Create new scan">
+	<div id="dialog-scanform" title="Create new scan">
 		<p class="validateTips">All fields are mandatory.</p>
 
 		<form>
@@ -74,23 +202,23 @@
 			</div>
 
 			<div id="position">
-				<p><label for="lat">Gal. lat.</label>
-				<input type="text" name="lat" id="lat"></p>
-				<p><label for="lon">Gal. lon.</label>
-				<input type="text" name="lon" id="lon"></p>
+				<p><label for="ras">RA</label>
+				<input type="text" name="ras" id="ras"></p>
+				<p><label for="dec">Dec</label>
+				<input type="text" name="dec" id="dec"></p>
 			</div>
 
 			<p><label for="duration">Duration</label></p>
 			<p><input type="text" name="duration" id="duration" placeholder="00h00m00s"></p>
 
-			<p><label for="center">Spectrum Center</label></p>
-			<p><input type="text" name="center" id="center" placeholder="MHz"></p>
+			<p><label for="freqlower">Min freq</label></p>
+			<p><input type="text" name="freqlower" id="freqlower" placeholder="MHz"></p>
 
-			<p><label for="step-num">Step Number</label></p>
-			<p><input type="text" name="step-num" id="step-num" placeholder="positive integer"></p>
+			<p><label for="frequpper">Max freq</label></p>
+			<p><input type="text" name="frequpper" id="frequpper" placeholder="MHz"></p>
 
-			<p><label for="step-size">Step Size</label></p>
-			<p><input type="text" name="step-size" id="step-size" placeholder="MHz"></p>
+			<p><label for="stepnum">Step number</label></p>
+			<p><input type="text" name="stepnum" id="stepnum"></p>
 
 			<p><label for="name">Scan Name</label></p>
 			<p><input type="text" name="name" id="name" placeholder="max 30 characters"></p>
@@ -99,37 +227,68 @@
 
 	</div>
 
-	<!-- Table containing the current scan queue, updated automatically by ajax requests. -->
-	<div id="scan-list">
+	<div id="dialog-searchform" title="Search for scans">
 
-		<table id="queued-scans">
+		<p class="validateTips"></p>
+
+		<form>
+			<h3>Search terms</h3>
+
+			<p><label for="year">Year</label>
+			<select name="year" id="year">
+				<option value="any">Any</option>
+			</select></p>
+
+			<p><label for="month">Month</label>
+			<select name="month" id="month">
+				<option value="any">Any</option>
+				<option value="1">January</option>
+				<option value="2">February</option>
+				<option value="3">March</option>
+				<option value="4">April</option>
+				<option value="5">May</option>
+				<option value="6">June</option>
+				<option value="7">July</option>
+				<option value="8">August</option>
+				<option value="9">September</option>
+				<option value="10">October</option>
+				<option value="11">November</option>
+				<option value="12">December</option>
+			</select></p>
+
+			<p><label for="name">Name</label>
+			<input type="text" name="name" id="name" placeholder="max 30 characters"></p>
+
+			<p><button id="search">Search</button></p>
+
+		</form>
+
+		<div id="results-section">
+		<h3>Search results</h3>
+		
+		<table id="search-results">
 
 			<thead>
 				<tr class="ui-widget-header">
-					<th>Name</th>
-					<th>Type</th>
-					<th>Source/Position</th>
-					<th>Duration</th>
-					<th>Center</th>
+					<th><input type="checkbox" id="checkall"></th>
+					<th></th>
 					<th></th>
 				</tr>
 			</thead>
 
 			<tbody>
 				<tr class="entry">
-					<td id="name">Name</td>
-					<td id="type">Type</td>
-					<td id="source-pos"><div id="sourcename"></div><div id="lat"></div><div id="lon"></div></td>
-					<td id="duration">Duration</td>
-					<td id="center">Center</td>
-					<td><span class="ui-icon ui-icon-circle-close close">Remove/End Scan</span></td>
+					<td><input type="checkbox"></td>
+					<td id="scanname">name</td>
+					<td id="date">00/00/00</td>
 					<td hidden id="id"></td>
 				</tr>
 			</tbody>
 
 		</table>
 
-		<button id="create-scan">Create scan</button>
+		<p><a href="#" target="_blank" id="download" download="scans.zip">Download selected</a><a href="#" id="delete">Delete selected</a></p>
+		</div>
 
 	</div>
 

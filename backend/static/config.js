@@ -1,3 +1,4 @@
+
 $( function() {
 
 	// initial setup
@@ -5,8 +6,8 @@ $( function() {
 
 	var sourcelistTemplate = 	`<tr class="entry">
 									<td id="name">Name</td>
-									<td id="gallat">Gallat</td>
-									<td id="gallon">Gallon</td>
+									<td id="ras">RA</td>
+									<td id="dec">Dec</td>
 									<td><span class="ui-icon ui-icon-circle-close close">Remove source</span></td>
 								</tr>`
 
@@ -103,7 +104,7 @@ $( function() {
 
 		if ( validateSource() ) {
 
-			var sourcevalues = { "name": dialog.find( "#name" ).val(), "gallat": dialog.find( "#gallat" ).val(), "gallon": dialog.find( "#gallon" ).val() };
+			var sourcevalues = { "name": dialog.find( "#name" ).val(), "#ras": dialog.find( "#ras" ).val(), "dec": dialog.find( "#dec" ).val() };
 
 			var sourcejson = JSON.stringify( sourcevalues );
 
@@ -131,8 +132,8 @@ $( function() {
 			newentry = $( newentry );
 
 			newentry.find( "#name" ).html( listdata[i]["name"] );
-			newentry.find( "#gallat" ).html( listdata[i]["gallat"] );
-			newentry.find( "#gallon" ).html( listdata[i]["gallon"] );
+			newentry.find( "#ras" ).html( listdata[i]["ras"] );
+			newentry.find( "#dec" ).html( listdata[i]["dec"] );
 
 			$( "#sourcelist" ).find( "tbody" ).append( newentry );
 		};
@@ -202,8 +203,8 @@ $( function() {
 		var valid = true;
 
 		valid = valid && checkRegexp( dialog.find( "#name" ), /.{1,30}/, "Name must be no more than 30 characters long." );
-		valid = valid && checkRegexp( dialog.find( "#gallat" ), /-?[0-9]+\.?[0-9]*/, "Latitude must be a real number." ) && checkSize( dialog.find( "#gallat" ), "latitude", -90, 90 );
-		valid = valid && checkRegexp( dialog.find( "#gallon" ), /[0-9]+\.?[0-9]*/, "Longitude must be a real number." ) && checkSize( dialog.find( "#gallon" ), "longitude", 0, 360 );
+		valid = valid && checkRegexp( dialog.find( "#ras" ), /(?:[0-9]|1\d|2[0-4])h(?:[0-9]|[1-5]\d|60)m(?:[0-9]|[1-5]\d|60)s/, "Right ascension must be specified in sidereal time." )
+		valid = valid && checkRegexp( dialog.find( "#dec" ), /-?[0-9]+\.?[0-9]*/, "Declination must be a real number." ) && checkSize( dialog.find( "#dec" ), "declination", -90, 90 );
 
 		return valid;
 	}
@@ -216,32 +217,35 @@ $( function() {
 
 			valid = valid && checkRegexp( table.find( "#name" ), /.{1,100}/, "Name must be no more that 100 characters long." );
 			valid = valid && checkRegexp( table.find( "#lat" ), /-?[0-9]+\.?[0-9]*/, "Latitude must be a real number." ) && checkSize( table.find( "#lat" ), "latitude", -90, 90 );
-			valid = valid && checkRegexp( table.find( "#lon" ), /[0-9]+\.?[0-9]*/, "Longitude must be a real number." ) && checkSize( table.find( "#lon" ), "longitude", 0, 360 );
+			valid = valid && checkRegexp( table.find( "#lon" ), /[0-9]+\.?[0-9]*/, "Longitude must be a real number." ) && checkSize( table.find( "#lon" ), "longitude", -180, 180 );
 			valid = valid && checkRegexp( table.find( "#height" ), /[0-9]+\.?[0-9]*/, "Height must be a positive real number." ) && checkSize( table.find( "#height" ), "height", 0, 10000 );
 		}
 		else if ( table.attr( "id" ) === "movelimits" ) {
 
 			valid = valid && checkRegexp( table.find( "#azlower" ), /[0-9]+\.?[0-9]*/, "Azimuth must be a positive real number." ) && checkSize( table.find( "#azlower" ), "azimuth", 0, 360 );
 			valid = valid && checkRegexp( table.find( "#azupper" ), /[0-9]+\.?[0-9]*/, "Azimuth must be a positive real number." ) && checkSize( table.find( "#azupper" ), "azimuth", 0, 360 );
+			valid = valid && checkOrder( table.find( "#azlower" ), table.find( "#azupper" ), "Minimum azimuth", "maximum azimuth" );
 			valid = valid && checkRegexp( table.find( "#allower" ), /[0-9]+\.?[0-9]*/, "Altitude must be a positive real number." ) && checkSize( table.find( "#allower" ), "altitude", 0, 180 );
 			valid = valid && checkRegexp( table.find( "#alupper" ), /[0-9]+\.?[0-9]*/, "Altitude must be a positive real number." ) && checkSize( table.find( "#alupper" ), "altitude", 0, 180 );
+			valid = valid && checkOrder( table.find( "#allower" ), table.find( "#alupper" ), "Minimum altitude", "maximum altitude" );
 		}
 		else {
 
 			valid = valid && checkRegexp( table.find( "#freqlower" ), /[0-9]+\.?[0-9]*/, "Frequency must be a positive real number." ) && checkSize( table.find( "#freqlower" ), "frequency", 0, 10000 );
 			valid = valid && checkRegexp( table.find( "#frequpper" ), /[0-9]+\.?[0-9]*/, "Frequency must be a positive real number." ) && checkSize( table.find( "#frequpper" ), "frequency", 0, 10000 );
+			valid = valid && checkOrder( table.find( "#freqlower" ), table.find( "#frequpper" ), "Minimum frequency", "maximum frequency" );
 		};
 
 		return valid;
 	}
 
 	// helper function that evaluates regular expressions and updates the dialog display
-	function checkRegexp( o, regexp, n ) {
+	function checkRegexp( object, regexp, message ) {
 
-		if ( !( regexp.test( o.val() ) ) ) {
+		if ( !( regexp.test( object.val() ) ) ) {
 
-			o.addClass( "ui-state-error" );
-			updateTips( o, n );
+			object.addClass( "ui-state-error" );
+			updateTips( object, message );
 			return false;
 		}
 		else {
@@ -251,12 +255,27 @@ $( function() {
 	}
 
 	// helper function that checks the size of a number and updates the dialog display
-	function checkSize( o, n, min, max ) {
+	function checkSize( object, message, min, max ) {
 
-		if ( o.val() < min || o.val() > max ) {
+		if ( object.val() < min || object.val() > max ) {
 
-			o.addClass( "ui-state-error" );
-			updateTips( o, "Value of " + n + " must be between " + min + " and " + max + "." );
+			object.addClass( "ui-state-error" );
+			updateTips( object, "Value of " + message + " must be between " + min + " and " + max + "." );
+			return false;
+		}
+		else {
+
+			return true;
+		};
+	}
+
+	function checkOrder( lobject, uobject, lmessage, umessage ) {
+
+		if ( lobject.val() > uobject.val() ) {
+
+			lobject.addClass( "ui-state-error" );
+			uobject.addClass( "ui-state-error" );
+			updateTips( lobject, lmessage + " must be smaller than " + umessage + "." );
 			return false;
 		}
 		else {
@@ -266,16 +285,18 @@ $( function() {
 	}
 
 	// displays tips when users give bad input
-	function updateTips( o, t ) {
+	function updateTips( object, message ) {
 
-		var tipbox = o.closest( "div" ).find( ".validateTips" )
+		var tipbox = object.closest( "div" ).find( ".validateTips" )
 
 		tipbox.show();
 
-		tipbox.text( t ).addClass( "ui-state-highlight" );
+		tipbox.text( message ).addClass( "ui-state-highlight" );
 
 		setTimeout( function() {
+
 			tipbox.removeClass( "ui-state-highlight", 1500 );
+
 		}, 500 );
 	}
 

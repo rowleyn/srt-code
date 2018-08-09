@@ -27,6 +27,13 @@
 		#hiddenonstart {
 			display: none;
 		}
+		.ui-dialog .ui-state-error {
+			padding: 0.3em;
+		}
+		.validateTips {
+			border: 1px solid transparent;
+			padding: 0.3em;
+		}
 
 	</style>
 
@@ -141,8 +148,8 @@
 				<thead>
 					<tr class="ui-widget-header">
 						<th>Name</th>
-						<th>Gal. lat.</th>
-						<th>Gal. lon.</th>
+						<th>RA</th>
+						<th>Dec</th>
 						<th></th>
 					</tr>
 				</thead>
@@ -150,8 +157,8 @@
 				<tbody>
 					<tr class="entry">
 						<td id="sourcename"></td>
-						<td id="sourcelat"></td>
-						<td id="sourcelon"></td>
+						<td id="sourceras"></td>
+						<td id="sourcedec"></td>
 						<td><span class="ui-icon ui-icon-circle-close close">Remove source</span></td>
 					</tr>
 				</tbody>
@@ -173,11 +180,11 @@
 			<p><label for="name">Name</label>
 			<input type="text" name="name" id="name"></p>
 
-			<p><label for="gallat">Gal. lat.</label>
-			<input type="text" name="gallat" id="gallat"></p>
+			<p><label for="ras">RA</label>
+			<input type="text" name="ras" id="ras"></p>
 
-			<p><label for="gallon">Gal. lon.</label>
-			<input type="text" name="gallon" id="gallon"></p>
+			<p><label for="dec">Dec</label>
+			<input type="text" name="dec" id="dec"></p>
 
 		</form>
 

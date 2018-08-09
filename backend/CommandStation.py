@@ -6,38 +6,39 @@ Author: Nathan Rowley
 Date: June 2018
 '''
 
-import socket
-import json
-import sys
 from astropy.coordinates import SkyCoord, EarthLocation, AltAz
 from astropy.time import Time
+import socket
+import time
 import ntplib
 import sqlite3
+import serial
+
 
 ### change these depending on which converter is attached to the telescope and how it is configured ###
 
-SEND_PORT = 23 				# port number (int) of the converter connected to the station
-SEND_IP = '192.168.0.8' 	# ip address (str) of the converter connnected to the station
-DEFAULT_BUFFER_SIZE = 4096
-DEFAULT_TIMEOUT = 10
+# SEND_PORT = 23 				# port number (int) of the converter connected to the station
+# SEND_IP = '192.168.0.8' 	# ip address (str) of the converter connnected to the station
+# DEFAULT_BUFFER_SIZE = 4096
+# DEFAULT_TIMEOUT = 10
 
 class CommandStation:
 
 	def __init__(self):
-		self.port = SEND_PORT
-		self.addr = SEND_IP
-		self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		self.sock.settimeout(DEFAULT_TIMEOUT)
+		# self.port = SEND_PORT
+		# self.addr = SEND_IP
+		# self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		# self.sock.settimeout(DEFAULT_TIMEOUT)
 
 	
 	'''
 	Method that commands the station to move to a particular azimuth and altitude.
 
-	:param az: target azimuth
-	:param al: target altitude
-	:return:
+	:param newaz: target azimuth
+	:param newal: target altitude
+	:return successful: a boolean indicating whether movement was successfully completed
 	'''
-	def movebyazal(self, az, al) -> None:
+	def movebyazal(newaz, newal) -> bool:
 
 		### get current station position ###
 
@@ -50,61 +51,134 @@ class CommandStation:
 		curaz = configdata['az']				# get current azimuth and altitude
 		cural = configdata['al']
 
-		print(str(curaz)+' '+str(cural))
+		print(str(curaz) + ' ' + str(cural))
 
 		azset = False
 		alset = False
-		if curaz == az:		# check to make sure station needs to move
+
+		successful = True
+
+		if curaz == newaz:		# check to make sure station needs to move
+
 			azset = True
-		if cural == al:
+
+		if cural == newal:
+
 			alset = True
 
 		### move station to correct azimuth and altitude ###
 		
 		if not azset:
-			if (az - curaz) > 0:	# determine azimuth increase (direction = 1) or decrease (direction = 0)
-				direction = 1
-			else:
-				direction = 0
-			azcount = int(round(abs(az - curaz)*11.7))	# determine azimuth count value for the stamp controller
-		elif not alset:
-			if (al - cural > 0):	# determine altitude increase (direction = 3) or decrease (direction = 2)
-				direction = 3
-			else:
-				direction = 2
-			alcount = int(round(abs(al - cural)*11.7)) 	# calculate altitude count value
 
-		self.sock.connect((self.addr,self.port))		# open connection to the serial to ethernet converter
+			if (newaz - curaz) > 0:	# determine azimuth increase (direction = 1) or decrease (direction = 0)
 
-		while (not azset or not alset):					# while loop will always set azimuth first if not already set, then altitude if not already set
+				azdirection = 1
+
+			else:
+
+				azdirection = 0
+
+			azcount = int(floor(abs(newaz - curaz) * 11.7))	# determine azimuth count value for the stamp controller
+
+		if not alset:
+
+			if (newal - cural > 0):	# determine altitude increase (direction = 3) or decrease (direction = 2)
+
+				aldirection = 3
+
+			else:
+
+				aldirection = 2
+
+			alcount = int(floor(abs(newal - cural) * 11.7)) 	# calculate altitude count value
+
+		ser = serial.Serial('/dev/ttyAMA0', baudrate = 2400, timeout = 1)
+
+		# self.sock.connect((self.addr,self.port))		# open connection to the serial to ethernet converter
+
+		while not azset or not alset:					# while loop will always set azimuth first if not already set, then altitude if not already set
 
 			if not azset:
-				message = ' move ' + str(direction) + ' ' + str(azcount) + '\n'	# move to new azimuth
+
+				message = ' move ' + str(azdirection) + ' ' + str(azcount) + '\n'	# move to new azimuth
+
 			elif not alset:
-				message = ' move ' + str(direction) + ' ' + str(alcount) + '\n'	# move to new altitude
+
+				message = ' move ' + str(aldirection) + ' ' + str(alcount) + '\n'	# move to new altitude
+
 			print(message)
-			self.sock.send(message.encode('ascii'))					# send message to stamp via serial to ethernet converter
+
+			ser.open()
+
+			ser.write(message.encode('ascii'))
+
+			# self.sock.send(message.encode('ascii'))					# send message to stamp via serial to ethernet converter
 			print('data sent')
+
+			received = False
+			response = ''
+
+			while not received:
+
+				rbyte = ser.read()
+
+				if len(rbyte) > 0:
+
+					response += rbyte.decode('ascii')
+
+				else:
+
+					if len(response) > 0:
+
+						received = True
+
+			ser.close()
 			
-			response = self.sock.recv(DEFAULT_BUFFER_SIZE).decode('ascii').strip().split()		# receive and format response data
+			# response = self.sock.recv(DEFAULT_BUFFER_SIZE).decode('ascii').strip().split()		# receive and format response data
+
+			response = response.strip().split()
+
 			print('reply received')
 			
 			if response[0] == 'M':								# response indicates successful completion of movement
+
 				if not azset:
+
+					curaz = newaz
 					azset = True
+
 				elif not alset:
+
+					cural = newal
 					alset = True
-			else:												# response indicates stamp timeout, must resend message with updated values
-				if response[1] != response[3]:					# update count based on returned value
-					if not azset:
-						azcount = azcount - int(response[1])
-					elif not alset:
-						alcount = alcount - int(response[1])
-				else:											# if target is reached despite timeout
-					if not azset:
-						azset = True
-					elif not alset:
-						alset = True
+
+			else:												# response indicates stamp timeout, pause scan and wait until it is unpaused
+
+				cur.execute("UPDATE STATUS SET CODE = ?", ('timeout',))
+
+				if not azset:
+
+					if azdirection == 1:
+
+						curaz = int(floor(curaz + (int(response[1]) / 11.7)))
+
+					else:
+
+						curaz = int(floor(curaz - (int(response[1]) / 11.7)))
+
+				else:
+
+					if aldirection == 3:
+
+						cural = int(floor(cural - (int(response[1]) / 11.7)))
+
+					else:
+
+						cural = int(floor(cural - (int(response[1]) / 11.7)))
+
+				successful = False
+
+				break
 
 		### update current station position ###
 
@@ -115,11 +189,13 @@ class CommandStation:
 
 		### close socket ###
 
-		try:
-			self.sock.shutdown(socket.SHUT_RDWR)
-			self.sock.close()
-		except OSError:
-			pass  				# server already closed socket
+		# try:
+		# 	self.sock.shutdown(socket.SHUT_RDWR)
+		# 	self.sock.close()
+		# except OSError:
+		# 	pass  				# server already closed socket
+
+		return successful
 
 	
 	'''
@@ -163,10 +239,10 @@ class CommandStation:
 	'''
 	Method that commands the station to take a single power reading at a single frequency.
 
-	:para freq: frequency 
-	:return power: float containing the power reading at frequency
+	:para freq: frequency at which to takea reading
+	:return power: float containing the power reading at the frequency freq
 	'''
-	def readpower(self, freq) -> float:
+	def readpower(freq) -> float:
 
 		### prepare command message ###
 
@@ -186,9 +262,36 @@ class CommandStation:
 
 		### send commmand message and receive response ###
 
-		self.sock.connect((self.addr,self.port))
+		# self.sock.connect((self.addr,self.port))
+		# for e in message:
+		# 	self.sock.send(e.encode('ascii'))
+
+		ser = serial.Serial('/dev/ttyAMA0', baudrate = 2400, timeout = 1)
+
+		ser.open()
+
 		for e in message:
-			self.sock.send(e.encode('ascii'))
+
+			ser.write(e.encode('ascii'))
+
+		received = False
+		response = []
+
+		while not received:
+
+			rbyte = ser.read()
+
+			if len(rbyte) > 0:
+
+				response.append(int(rbyte))
+
+			else:
+
+				if len(response) > 0:
+
+					received = True
+
+		ser.close()
 
 		# deprecated
 		'''
@@ -204,20 +307,20 @@ class CommandStation:
 				break											# TCP socket times out after stamp stops sending
 		'''
 
-		response = self.sock.recv(DEFAULT_BUFFER_SIZE).decode('ascii').strip().split()		# receive and format response data
+		# response = self.sock.recv(DEFAULT_BUFFER_SIZE).decode('ascii').strip().split()		# receive and format response data
 
 		### close socket ###
 
-		try:
-			self.sock.shutdown(socket.SHUT_RDWR)
-			self.sock.close()
-		except OSError:
-			pass  				# server already closed socket
+		# try:
+		# 	self.sock.shutdown(socket.SHUT_RDWR)
+		# 	self.sock.close()
+		# except OSError:
+		# 	pass  				# server already closed socket
 
 		### calculate power from received values and return ###
 
-		w2 = int(response[0])
-		w1 = int(response[1]) * 256 + int(response[2])
+		w2 = response[0]
+		w1 = response[1] * 256 + response[2]
 		power = 1e6 * (w2 / w1)
 		gaincor = 1							# currently no means of setting gain correction. likely will be set to 1 anyway
 		if atten == 0:

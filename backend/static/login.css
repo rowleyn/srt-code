@@ -1,0 +1,11 @@
+
+/* Whole-page style. */
+html {
+	background-color: #303030;
+	font-family: "Trebuchet MS", Verdana, sans-serif;
+}
+
+/* Style for the login dialog. */
+.no-close .ui-dialog-titlebar-close {
+	display: none;
+}
