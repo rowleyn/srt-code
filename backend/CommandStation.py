@@ -1,6 +1,6 @@
 '''
-A class that uses a TCP socket to command the station
-through an Ethernet to serial
+A class that uses a serial port to command the telescope's
+stamp controller. Handles both movement and measurement commands.
 
 Author: Nathan Rowley
 Date: June 2018
