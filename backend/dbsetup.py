@@ -61,6 +61,8 @@ srt.execute('''CREATE TABLE SOURCES(
 srt.execute('''CREATE TABLE STATUS(
 	ID		INT 	NOT NULL,
 	CODE	TEXT	NOT NULL);''')
+	
+srt.execute("INSERT INTO STATUS VALUES (?,?)", (-1,'ok'))
 
 # srt.execute("INSERT INTO HISTORY (ID,NAME,TYPE,DAY,MONTH,YEAR,STATUS) \
 # 		VALUES 	(10,'testhistory1','drift',27,7,2018,'complete')")
@@ -86,8 +88,8 @@ srt.execute('''CREATE TABLE STATUS(
 # srt.execute("INSERT INTO STATUS (ID,ENDTIME,PAUSED) \
 # 		VALUES	(1234567890,0,0)")
 
-# srt.execute("INSERT INTO CONFIG (NAME,LAT,LON,HEIGHT,AZ,AL,AZLOWER,AZUPPER,ALLOWER,ALUPPER,FREQLOWER,FREQUPPER) \
-# 		VALUES	('Carleton Small Radio Telescope', 0, 0, 0, 180, 90, 0, 360, 0, 180, 0, 10000 )")
+srt.execute("INSERT INTO CONFIG (NAME,LAT,LON,HEIGHT,AZ,AL,AZLOWER,AZUPPER,ALLOWER,ALUPPER,FREQLOWER,FREQUPPER) \
+		VALUES	('Carleton Small Radio Telescope', 0, 0, 0, 180, 90, 0, 360, 0, 180, 0, 10000 )")
 
 # srt.execute("INSERT INTO QUEUE (ID,NAME,TYPE,SOURCE,RAS,DEC,DURATION,FREQLOWER,FREQUPPER,STEPNUM) \
 # 		VALUES	(1234567890, 'test1', 'track', 'crab', '0h0m0s', 0, '01h01m01s', 1400, 1440, 1000 )")
@@ -98,7 +100,7 @@ srt.execute('''CREATE TABLE STATUS(
 # srt.execute("INSERT INTO SOURCES (NAME,RAS,DEC) \
 # 		VALUES	('test', '0h0m0s', 0)")
 
-# srt.commit()
+srt.commit()
 
 # b = io.BytesIO(b"")
 
@@ -124,9 +126,9 @@ srt.execute('''CREATE TABLE STATUS(
 # for source in sourcelist:
 # 	print(source)
 
-# status = srt.execute("SELECT * FROM STATUS")
-# for values in status:
-# 	print(values)
+status = srt.execute("SELECT * FROM STATUS")
+for values in status:
+	print(values)
 
 # history = srt.execute("SELECT * FROM HISTORY")
 # for scan in history:

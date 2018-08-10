@@ -78,11 +78,11 @@ $(function() {
 				intervalid = setInterval( getscanstatus, 10000 );
 				warning.dialog( "close" );
 			},
-			"Cancel scan": 
+			"Cancel scan": function() {}
 		},
 		classes: {
 
-			"ui-dialog": "ui-corner-all no-close"
+			"ui-dialog": "ui-corner-all no-close",
 			"ui-dialog-titlebar": "ui-corner-all"
 		}
 	});
@@ -100,9 +100,9 @@ $(function() {
 
 			currentstatus = response
 
-			if ( currentstatus["code"] !== "ok" || currentstatus["code"] !== "cancelled") {
+			if ( currentstatus["code"] !== "ok") {
 
-				clearInterval( intervalid );
+				clearInterval( interval_id );
 
 				if (currentstatus["code"] === "timeout") {
 
@@ -163,44 +163,29 @@ $(function() {
 	function refreshSidebar() {
 
 		$.post( "/status", function( response ) {
-
-			$( "#az" ).text( "Az: " + response["config"]["az"] );
-			$( "#al" ).text( "Al: " + response["config"]["al"] );
-
-			var currentscan = response["scanqueue"];
-
-			var bar = $( ".statusbar" );
-
-			if ( currentscan["type"] === "track" ) {
-
-				bar.find( "#drift" ).hide();
-				bar.find( "#track" ).show();
-			}
-			else {
-
-				bar.find( "#track" ).hide();
-				bar.show( "#drift" ).show();
-			};
-
-			if ( currentscan["source"] === "no source" ) {
-
-				bar.find( "#source" ).hide();
-				bar.find( "#ras" ).html( "RA: " + currentscan["ras"] );
-				bar.find( "#dec" ).html( "Dec: " + currentscan["dec"] );
-				bar.find( "#position" ).show();
-
-			}
-			else {
-
-				bar.find( "#position" ).hide();
-				bar.find( "#source" ).html( "Source: " + currentscan["source"] );
-				bar.find( "#source" ).show();
-			}
-
-			bar.find( "#freqlower" ).html( "Lower: " + currentscan["freqlower"] + " MHz" );
-			bar.find( "#frequpper" ).html( "Upper: " + currentscan["frequpper"] + " MHz" );
 			
-			}, "json" );
+			$( "#az" ).text( "Az: " + response["az"] );
+			$( "#al" ).text( "Al: " + response["al"] );
+			
+			if ( response['status'] === "noactive" ) {
+				
+				$( "#scaninfo" ).hide();
+				$( "#noactive" ).show();
+				
+			}
+			else {
+				
+				$( "#noactive" ).hide();
+				$( "#scaninfo" ).show();
+	
+				var bar = $( ".statusbar" );
+
+				bar.find( "#name" ).html( "Name: " + response["name"] );
+				bar.find( "#starttime" ).html( "Start: " + response["starttime"] );
+				bar.find( "#endtime" ).html( "End: " + response["endtime"] );
+			};
+			
+		}, "json");
 	}
 
 	/*

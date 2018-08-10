@@ -33,7 +33,7 @@ current_users = 0
 @app.route('/login', methods=['GET','POST'])
 def login():
 
-	if request.method = 'GET':
+	if request.method == 'GET':
 
 		return render_template('login.html')
 
@@ -47,7 +47,7 @@ def login():
 
 					session['username'] = admin_username
 
-					current_users++
+					current_users = current_users + 1
 
 					return redirect(url_for('main_page'))
 
@@ -63,7 +63,7 @@ def login():
 
 					session['username'] = normal_username
 
-					current_users++
+					current_users = current_users + 1
 
 					return redirect(url_for('main_page'))
 
@@ -79,7 +79,7 @@ def logout():
 
 	session.pop('username', None)
 
-	current_users--
+	current_users = current_users - 1
 
 	return 'logged out'
 
@@ -118,12 +118,21 @@ def get_status():
 	responsepython = {}
 
 	configdata = cur.execute("SELECT * FROM CONFIG").fetchone()						# retrieve station config data and add it to the response
-	responsepython['config'] = {'az': configdata['az'], 'al': configdata['al']}
+	responsepython = {'az': configdata['az'], 'al': configdata['al']}
 
-	scandata = cur.execute("SELECT * FROM SCANPARAMS LIMIT 1").fetchone()			# retrieve first scan in scan queue and add it to the response
-
-	responsepython['scanqueue'] = {'id':scandata['id'], 'name':scandata['name'], 'type': scandata['type'], 'source': scandata['source'],
-									'ras': scandata['ras'], 'dec': scandata['dec'], 'freqlower': scandata['freqlower'], 'frequpper': scandata['frequpper']}
+	currentscan = cur.execute("SELECT * FROM SCANIDS WHERE STATUS = ?", ('running',)).fetchone()	# retrieve the id of the currently running scan, if it exists
+	
+	if currentscan == None:
+		
+		responsepython['status'] = 'noactive'
+		
+	else:
+		
+		scantimes = cur.execute("SELECT * FROM SCHEDULE WHERE ID = ?", (currentscan['id'],))
+		
+		responsepython['name'] = currentscan['name']
+		responsepython['starttime'] = scantimes['starttime']
+		responsepython['endtime'] = scantimes['endtime']
 
 	srtdb.close()												# database connection no longer needed
 
@@ -520,7 +529,7 @@ def get_scanstatus():
 				cur.execute("UPDATE STATUS SET CODE = ?", ('ok',))
 				srtdb.commit()
 
-	currentstatus = cur.execute("SELECT * FROM STATUS LIMIT 1").fetchone()
+	currentstatus = cur.execute("SELECT * FROM STATUS").fetchone()
 
 	responsepython = {'id': currentstatus['id'], 'code': currentstatus['code']}
 

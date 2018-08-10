@@ -8,6 +8,7 @@ Date: August 2018
 from astropy import SkyCoord, EarthLocation, AltAz
 from astropy.time import Time
 import sqlite3
+import re
 
 
 class Schedule:
@@ -93,6 +94,9 @@ class Schedule:
 					status == result
 
 					newblock = Block(scanid, starttime, endtime)
+					
+					startime = re.split('\.|\s', Time(starttime, scale='utc', format='unix').iso)[1]
+					endtime = re.split('\.|\s', Time(endtime, scale='utc', format='unix').iso)[1]
 
 					cur.execute("INSERT INTO SCHEDULE VALUES (?,?,?)", (scanid, starttime, endtime))	# update the schedule and scan status in the db
 					srtdb.commit()
