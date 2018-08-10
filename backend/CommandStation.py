@@ -1,6 +1,6 @@
 '''
 A class that uses a TCP socket to command the station
-through an Ethernet to serial converter.
+through an Ethernet to serial
 
 Author: Nathan Rowley
 Date: June 2018
