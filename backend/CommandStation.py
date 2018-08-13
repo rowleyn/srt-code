@@ -99,37 +99,39 @@ class CommandStation:
 
 			print(message)
 
-			ser.open()
+			# ser.open()
 
-			ser.write(message.encode('ascii'))
+			# ser.write(message.encode('ascii'))
 
 			# self.sock.send(message.encode('ascii'))					# send message to stamp via serial to ethernet converter
-			print('data sent')
+			print('movement data sent')
 
-			received = False
-			response = ''
+			# received = False
+			# response = ''
 
-			while not received:
+			# while not received:
 
-				rbyte = ser.read()
+			# 	rbyte = ser.read()
 
-				if len(rbyte) > 0:
+			# 	if len(rbyte) > 0:
 
-					response += rbyte.decode('ascii')
+			# 		response += rbyte.decode('ascii')
 
-				else:
+			# 	else:
 
-					if len(response) > 0:
+			# 		if len(response) > 0:
 
-						received = True
+			# 			received = True
 
-			ser.close()
+			# ser.close()
 			
-			# response = self.sock.recv(DEFAULT_BUFFER_SIZE).decode('ascii').strip().split()		# receive and format response data
+			# # response = self.sock.recv(DEFAULT_BUFFER_SIZE).decode('ascii').strip().split()		# receive and format response data
 
-			response = response.strip().split()
+			# response = response.strip().split()
 
 			print('reply received')
+
+			response = ['M']
 			
 			if response[0] == 'M':								# response indicates successful completion of movement
 
@@ -247,6 +249,8 @@ class CommandStation:
 		message.append(b9)
 		message.append(b8)
 
+		print(message)
+
 		### send commmand message and receive response ###
 
 		# self.sock.connect((self.addr,self.port))
@@ -255,30 +259,30 @@ class CommandStation:
 
 		ser = serial.Serial('/dev/ttyAMA0', baudrate = 2400, timeout = 1)
 
-		ser.open()
+		# ser.open()
 
-		for e in message:
+		# for e in message:
 
-			ser.write(e.encode('ascii'))
+		# 	ser.write(e.encode('ascii'))
 
-		received = False
-		response = []
+		# received = False
+		# response = []
 
-		while not received:
+		# while not received:
 
-			rbyte = ser.read()
+		# 	rbyte = ser.read()
 
-			if len(rbyte) > 0:
+		# 	if len(rbyte) > 0:
 
-				response.append(int(rbyte))
+		# 		response.append(int(rbyte))
 
-			else:
+		# 	else:
 
-				if len(response) > 0:
+		# 		if len(response) > 0:
 
-					received = True
+		# 			received = True
 
-		ser.close()
+		# ser.close()
 
 		# deprecated
 		
@@ -306,6 +310,8 @@ class CommandStation:
 
 		### calculate power from received values and return ###
 
+		response = [100, 1, 244]
+
 		w2 = response[0]
 		w1 = response[1] * 256 + response[2]
 		power = 1e6 * (w2 / w1)
@@ -319,32 +325,32 @@ class CommandStation:
 
 ### main function for testing ###
 
-def main():
+# def main():
 
-	command = CommandStation()
+# 	command = CommandStation()
 
-	print('test: azimuth only, small increase/decrease, large increase/decrease')
-	command.movebyazal(200,90)			# small azimuth increase
-	command.movebyazal(180,90)			# small azimuth decrease
-	command.movebyazal(360,90)			# large azimuth increase
-	command.movebyazal(180,90)			# large azimuth decrease
+# 	print('test: azimuth only, small increase/decrease, large increase/decrease')
+# 	command.movebyazal(200,90)			# small azimuth increase
+# 	command.movebyazal(180,90)			# small azimuth decrease
+# 	command.movebyazal(360,90)			# large azimuth increase
+# 	command.movebyazal(180,90)			# large azimuth decrease
 
-	print('test: altitude only, small increase/decrease, large increase/decrease')
-	command.movebyazal(180,120)			# small altitude increase
-	command.movebyazal(180,90)			# small altitude decrease
-	command.movebyazal(180,180)			# large altitude increase
-	command.movebyazal(180,90)			# large altitude decrease
+# 	print('test: altitude only, small increase/decrease, large increase/decrease')
+# 	command.movebyazal(180,120)			# small altitude increase
+# 	command.movebyazal(180,90)			# small altitude decrease
+# 	command.movebyazal(180,180)			# large altitude increase
+# 	command.movebyazal(180,90)			# large altitude decrease
 
-	print('test: azimuth and altitude same direction, small increase/decrease, large increase/decrease')
-	command.movebyazal(200,120)			# small azimuth and altitude increase
-	command.movebyazal(180,90)			# small azimuth and altitude decrease
-	command.movebyazal(360,180)			# large azimuth and altitude increase
-	command.movebyazal(180,90)			# large azimuth and altitude decrease
+# 	print('test: azimuth and altitude same direction, small increase/decrease, large increase/decrease')
+# 	command.movebyazal(200,120)			# small azimuth and altitude increase
+# 	command.movebyazal(180,90)			# small azimuth and altitude decrease
+# 	command.movebyazal(360,180)			# large azimuth and altitude increase
+# 	command.movebyazal(180,90)			# large azimuth and altitude decrease
 
-	print('test: azimuth and altitude opposite direction, small increase/decrease, large increase/decrease')
-	command.movebyazal(200,30)			# small azimuth increase and small altitude decrease
-	command.movebyazal(180,90)			# small azimuth decrease and small altitude increase
-	command.movebyazal(360,0)			# large azimuth increase and large altitude decrease
-	command.movebyazal(180,90)			# large azimuth decrease and large altitude increase
+# 	print('test: azimuth and altitude opposite direction, small increase/decrease, large increase/decrease')
+# 	command.movebyazal(200,30)			# small azimuth increase and small altitude decrease
+# 	command.movebyazal(180,90)			# small azimuth decrease and small altitude increase
+# 	command.movebyazal(360,0)			# large azimuth increase and large altitude decrease
+# 	command.movebyazal(180,90)			# large azimuth decrease and large altitude increase
 
 #main()

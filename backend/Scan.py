@@ -22,7 +22,7 @@ class Scan:
 
 	def __init__(self):
 
-		self.station = CommandStation()
+		self.station = CommandStation.CommandStation()
 
 
 	# Method to take a single data point at a single frequency for a single source.
@@ -90,7 +90,9 @@ class Scan:
 	# :param step: float containing frequency step quantity in MHz
 	# :param time: unix time at which to stop scanning
 	# :return trackdata: tuple containing a list of scan data and a string indicating the status of the scan
-	def track(scanid, pos, flimit, step, time) -> tuple:
+	def track(scanid, pos, flimit, step, time):
+
+		print('running a track scan')
 
 		srtdb = sqlite3.connect('srtdata.db')		# establish a connection and cursor into the database
 		srtdb.row_factory = sqlite3.Row
@@ -105,6 +107,8 @@ class Scan:
 			status = cur.execute("SELECT * FROM SCANIDS WHERE ID = ?", (scanid,)).fetchone()		# check current status to see if scan was cancelled
 
 			if status['status'] == 'cancelled':		# if scan was cancelled, return data collected so far
+
+				print('scan was cancelled')
 
 				srtdb.close()
 
@@ -124,11 +128,15 @@ class Scan:
 
 			if spectrumdata['spectrumsuccess'] == False:
 
+				print('scan timed out')
+
 				srtdb.close()
 
 				return (tackdata, 'timeout')
 
 			curtime = getcurrenttime()			# update current time
+
+		print('scan complete')
 
 		srtdb.close()
 
@@ -143,7 +151,9 @@ class Scan:
 	# :param step: float containing frequency step quantity in MHz
 	# :param time: unix time at which to stop scanning
 	# :return driftdata: tuple containing a list of scan data and a string indicating the status of the scan
-	def drift(scanid, pos, flimit, step, time) -> tuple:
+	def drift(scanid, pos, flimit, step, time):
+
+		print('running a drift scan')
 
 		srtdb = sqlite3.connect('srtdata.db')			# establish a connection and cursor into the database
 		srtdb.row_factory = sqlite3.Row
@@ -167,6 +177,8 @@ class Scan:
 
 			if status['status'] == 'cancelled':			# if scan was cancelled, return data collected so far
 
+				print('scan was cancelled')
+
 				srtdb.close()
 
 				return (driftdata, 'cancelled')
@@ -177,11 +189,15 @@ class Scan:
 
 			if spectrumdata['spectrumsuccess'] == False:
 
+				print('scan timed out')
+
 				srtdb.close()
 
 				return (driftdata, 'timeout')
 
 			curtime = getcurrenttime()			# update current time
+
+		print('scan complete')
 
 		srtdb.close()
 
@@ -232,6 +248,8 @@ class Scan:
 
 		if len(scandata[0]) != 0:
 
+			print('saving scan data')
+
 			starttime = Time(scandata[0]['starttime'], format = 'unix')							# package scan time info into astropy Time objects for format conversion
 			endtime = Time(scandata[len(scandata) - 1]['endtime'], format = 'unix')
 
@@ -278,6 +296,8 @@ class Scan:
 	# :return azal: tuple containing azimuth and altitude, or a string containing an error code
 	def getazal(pos):
 
+		print('calculating azal')
+
 		srtdb = sqlite3.connect('srtdata.db')	# establish a connection and cursor into the database
 		srtdb.row_factory = sqlite3.Row
 		cur = srtdb.cursor()
@@ -302,16 +322,24 @@ class Scan:
 
 		except ValueError as e:
 
+			print('positionerror')
+
 			return 'positionerror'
 
 		azal = (position.az, position.al)						# create azal tuple
 
 		if azal[0] < configdata['azlower'] or azal[0] > configdata['azupper']:
 
+			print('moveboundserror')
+
 			return 'moveboundserror'
 
 		if azal[1] < configdata['allower'] or azal[1] > configdata['alupper']:
 
+			print('moveboundserror')
+
 			return 'moveboundserror'
+
+		print(str(azal[0]) + ', ' + str(azal[1]))
 
 		return azal

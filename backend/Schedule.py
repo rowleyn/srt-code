@@ -20,9 +20,9 @@ class Schedule:
 	# :param endtime: end time of the schedule period in unix time
 	def __init__(self, starttime, endtime):
 
-		startblock = Block('start', starttime, starttime)				# create Blocks to mark the start and end of the schedule
+		startblock = self.Block(None, starttime, starttime)			# create Blocks to mark the start and end of the schedule
 
-		endblock = Block('end', endtime, endtime)
+		endblock = self.Block(None, endtime, endtime)
 
 		self.schedule = [startblock, endblock]
 
@@ -74,6 +74,8 @@ class Schedule:
 
 		status = 'durationerror'
 
+		print('attempting to schedule a scan')
+
 		for i in range(len(self.schedule) - 2):							# loops through the spaces between each Block in the schedule
 
 			while starttime >= self.schedule[i].endtime + 300 and endtime <= self.schedule[i+1].starttime - 300:		# loops through five-minute steps of the time between two blocks (padded by five minutes on either side)
@@ -85,6 +87,8 @@ class Schedule:
 					status == result
 
 				if result == 'scheduled':		# if the scan is valid, create a new Block for the scan and insert it into the schedule
+
+					print('found a spot!')
 
 					status == result
 
@@ -113,6 +117,8 @@ class Schedule:
 
 			endtime = starttime + seconds					# update endtime to reflect new starttime
 
+		print('couldn\'t find a spot. error code: ' + status)
+
 		srtdb.close()
 
 		return status
@@ -127,6 +133,8 @@ class Schedule:
 		for i in range(len(self.schedule - 2)):
 
 			if self.schedule[i].scanid == scanid:
+
+				print('scan removed from schedule')
 
 				del self.schedule[i]
 				break
