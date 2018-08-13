@@ -104,7 +104,7 @@ $( function() {
 
 		if ( validateSource() ) {
 
-			var sourcevalues = { "name": dialog.find( "#name" ).val(), "#ras": dialog.find( "#ras" ).val(), "dec": dialog.find( "#dec" ).val() };
+			var sourcevalues = { "name": dialog.find( "#name" ).val(), "ras": dialog.find( "#ras" ).val(), "dec": dialog.find( "#dec" ).val() };
 
 			var sourcejson = JSON.stringify( sourcevalues );
 
