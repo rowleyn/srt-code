@@ -3,11 +3,11 @@ $( function() {
 	
 	// initial setup
 	var scandialog,	searchdialog, tips = $( ".validateTips" ),
-		type = $( "#dialog-scanform #type" ), duration = $( "#dialog-scanform #duration" ), freqlower = $( "#dialog-scanform #freqlower"), freqlower = $( "#dialog-scanform #frequpper" ),
+		type = $( "#dialog-scanform #type" ), duration = $( "#dialog-scanform #duration" ), freqlower = $( "#dialog-scanform #freqlower"), frequpper = $( "#dialog-scanform #frequpper" ),
 		name = $( "#dialog-scanform #name" ), position = $( "#dialog-scanform #position" ), ras = position.find( "#dialog-scanform #ras" ), dec = position.find( "#dialog-scanform #dec" ),
 		step_num = $( "#dialog-scanform #stepnum" ), source = $( "#dialog-scanform #source" ), sourcelist = $( "#dialog-scanform #sourcelist" );
 
-	var allFields = $( [] ).add( type ).add( duration ).add( freqlower ).add( frequpper ).add( step_num ).add( name ).add( ras ).add( dec ).add( sourcelist )
+	var allFields = $( [] ).add( type ).add( duration ).add( freqlower ).add( frequpper ).add( step_num ).add( name ).add( ras ).add( dec ).add( sourcelist );
 
 	position.hide();
 	source.show();
@@ -21,7 +21,7 @@ $( function() {
 								<td id="freqrange"><div id="freqlower"></div><div id="frequpper"></div></td>
 								<td><span class="ui-icon ui-icon-circle-close close">Cancel Scan</span></td>
 								<td hidden id="id"></td>
-							</tr>`
+							</tr>`;
 
 	// template for adding new scans to the search list
 	var searchlistTemplate = 	`<tr class="entry">
@@ -29,7 +29,7 @@ $( function() {
 									<td id="scanname">name</td>
 									<td id="date">00/00/00</td>
 									<td hidden id="id"></id>
-								</tr>`
+								</tr>`;
 
 
 	var historylistTemplate = 	`<tr class="history-entry">
@@ -37,7 +37,7 @@ $( function() {
 									<td id="type">Type</td>
 									<td id="date">Date</td>
 									<td id="status">Success</td>
-								</tr>`
+								</tr>`;
 
 
 	/*
@@ -140,7 +140,7 @@ $( function() {
 			$( "input[type=text], textarea" ).val( "" );
 			$( "#dialog-searchform #year" ).val( "any" );
 			$( "#dialog-searchform #month" ).val( "any" );
-			$( "#search-results tbody" ).html( "<tr><td></td><td></td><td></td>></tr>" )
+			$( "#search-results tbody" ).html( "<tr><td></td><td></td><td></td>></tr>" );
 			$( "#download" ).button( "disable" );
 			$( "#delete" ).button( "disable" );
 			$( "#dialog-searchform #name" ).removeClass( "ui-state-error" );			
@@ -178,7 +178,7 @@ $( function() {
 
 					document.body.appendChild( link );
 
-					link.click()
+					link.click();
 
 					document.body.removeChild( link );
 
@@ -385,7 +385,7 @@ $( function() {
 			// display the first scan in the queue as the active scan
 			if ( !active_set ) {
 
-				if ( scheduledata[i]['current'] === true ):
+				if ( scheduledata[i]['current'] === true ) {
 
 					$( "#active-scan tbody" ).append( newentry );
 
@@ -395,6 +395,8 @@ $( function() {
 
 						descheduleScan( scanid );
 					});
+					
+				}
 
 				active_set = true;
 			}
