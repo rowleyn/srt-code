@@ -13,12 +13,11 @@ import re
 
 class Schedule:
 
-	'''
-	Initializes a Schedule instance for building scan schedules.
 
-	:param starttime: start time of the schedule period in unix time
-	:param endtime: end time of the schedule period in unix time
-	'''
+	# Initializes a Schedule instance for building scan schedules.
+	#
+	# :param starttime: start time of the schedule period in unix time
+	# :param endtime: end time of the schedule period in unix time
 	def__init__(self, starttime, endtime):
 
 		startblock = Block('start', starttime, starttime)				# create Blocks to mark the start and end of the schedule
@@ -28,13 +27,11 @@ class Schedule:
 		self.schedule = [startblock, endblock]
 
 
-	'''
-	Internal class for storing scan and time info in a Schedule
-
-	:param scanid: the id of the scan in this block, or None if the block is an endmarker
-	:param starttime: start time of the scan in unix time
-	:param endtime: end time of the scan in unix time
-	'''
+	# Internal class for storing scan and time info in a Schedule
+	#
+	# :param scanid: the id of the scan in this block, or None if the block is an endmarker
+	# :param starttime: start time of the scan in unix time
+	# :param endtime: end time of the scan in unix time
 	class Block:
 
 		def__init__(self, scanid, starttime, endtime):
@@ -44,13 +41,11 @@ class Schedule:
 			self.endtime = endtime
 
 
-	'''
-	Method for adding a scan to the schedule. Inserts the scan at the earliest possible valid time.
-
-	:param scanid: the id of the scan to be added to the schedule
-	:param curtime: the current unix time
-	:return status: the status of the scan indicating success or failure to schedule
-	'''
+	# Method for adding a scan to the schedule. Inserts the scan at the earliest possible valid time.
+	#
+	# :param scanid: the id of the scan to be added to the schedule
+	# :param curtime: the current unix time
+	# :return status: the status of the scan indicating success or failure to schedule
 	def schedulescan(self, scanid, curtime):
 
 		srtdb = sqlite3.connect('srtdata.db')						# establish a connection and cursor into the database
@@ -123,12 +118,10 @@ class Schedule:
 		return status
 		
 
-	'''
-	Method that removes a scan from the schedule with an id matching scanid.
-
-	:param scanid: the id of the scan to be removed
-	:return:
-	'''
+	# Method that removes a scan from the schedule with an id matching scanid.
+	#
+	# :param scanid: the id of the scan to be removed
+	# :return:
 	def deschedulescan(self, scanid):
 
 		for i in range(len(self.schedule - 2)):
@@ -139,16 +132,14 @@ class Schedule:
 				break
 
 
-	'''
-	Helper method for checking the validity of a scan.
-	Checks that the scan's position is in the sky and that the scan does not go out of movement bounds.
-
-	:param pos: a tuple containing the RA/dec position of the scan
-	:param scantype: a string designating the type of scan
-	:param starttime: start time of the scan in unix time
-	:param endtime: end time of the scan in unix time
-	:return: a string indicating the status of the scan
-	'''
+	# Helper method for checking the validity of a scan.
+	# Checks that the scan's position is in the sky and that the scan does not go out of movement bounds.
+	#
+	# :param pos: a tuple containing the RA/dec position of the scan
+	# :param scantype: a string designating the type of scan
+	# :param starttime: start time of the scan in unix time
+	# :param endtime: end time of the scan in unix time
+	# :return: a string indicating the status of the scan
 	def checkscan(pos, scantype, starttime, endtime):
 
 		srtdb = sqlite3.connect('srtdata.db')	# establish a connection and cursor into the database

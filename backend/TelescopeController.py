@@ -19,9 +19,9 @@ from astropy.time import Time
 NTP_SERVER = 'ntp.carleton.edu'		# NTP server for time retrieval. Change to suit your needs
 
 
-'''
-The main method of the telescope code. All telescope actions ultimately originate from this method.
-'''
+#
+# The main method of the telescope code. All telescope actions ultimately originate from this method.
+#
 def main():
 
 	srtdb = sqlite3.connect('srtdata.db')		# establish a connection and cursor into the database
@@ -147,12 +147,11 @@ def main():
 
 
 
-'''
-Helper method that checks for any cancelled scans that must be removed from a schedule.
 
-:param schedule: the schedule to check for cancelled scans
-:return:
-'''
+# Helper method that checks for any cancelled scans that must be removed from a schedule.
+#
+# :param schedule: the schedule to check for cancelled scans
+# :return:
 def cancelscans(schedule):
 
 	srtdb = sqlite3.connect('srtdata.db')		# establish a connection and cursor into the database
@@ -180,12 +179,10 @@ def cancelscans(schedule):
 	srtdb.close()
 
 
-'''
-Helper method that checks a schedule and runs a scan scheduled at the current time
-
-:param schedule: the schedule to check for scans to run
-:return currentscanid: the id of the currently running scan
-'''
+# Helper method that checks a schedule and runs a scan scheduled at the current time
+#
+# :param schedule: the schedule to check for scans to run
+# :return currentscanid: the id of the currently running scan
 def runscan(schedule)
 
 	srtdb = sqlite3.connect('srtdata.db')		# establish a connection and cursor into the database
@@ -232,11 +229,9 @@ def runscan(schedule)
 	return currentscanid
 
 
-'''
-Helper method to get the current time from an NTP server.
-
-:return unixtime: current unix time
-'''
+# Helper method to get the current time from an NTP server.
+#
+# :return unixtime: current unix time
 def getcurrenttime():
 
 	c = ntplib.NTPClient()								# initialize ntplib client

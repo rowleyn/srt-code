@@ -23,13 +23,12 @@ class Scan:
 	def __init__(self):
 		self.station = CommandStation()
 
-	'''
-	Method to take a single data point at a single frequency for a single source.
 
-	:param azal: tuple containing azimuth and altitude of scan position
-	:param freq: frequency in MHz at which to measure
-	:return scan: tuple containing a single power measurement and boolean indicating successful movement
-	'''
+	# Method to take a single data point at a single frequency for a single source.
+	#
+	# :param azal: tuple containing azimuth and altitude of scan position
+	# :param freq: frequency in MHz at which to measure
+	# :return scan: tuple containing a single power measurement and boolean indicating successful movement
 	def singlescan(self, azal, freq) -> tuple:
 
 		movesuccess = self.station.movebyazal(azal[0], azal[1])		# move station to scan position
@@ -44,14 +43,13 @@ class Scan:
 
 		return (scan, movesuccess)
 
-	'''
-	Method to take data points across a spectrum for a single source.
 
-	:param azal: tuple containing azimuth and altitude of scan position
-	:param flimit: tuple containing lower and upper frequency limits in MHz
-	:param step: float containing frequency step quantity in MHz
-	:return data: dictionary containing a single spectrum with start and end times and a time correction value
-	'''
+	# Method to take data points across a spectrum for a single source.
+	#
+	# :param azal: tuple containing azimuth and altitude of scan position
+	# :param flimit: tuple containing lower and upper frequency limits in MHz
+	# :param step: float containing frequency step quantity in MHz
+	# :return data: dictionary containing a single spectrum with start and end times and a time correction value
 	def singlespectrum(azal, flimit, step) -> dict:
 
 		spectrum = []
@@ -82,16 +80,15 @@ class Scan:
 
 		return data
 
-	'''
-	Method to track a position and take data for a specific duration.
 
-	:param scanid: the id of the current scan
-	:param pos: tuple containing galactic latitude and longitude of the position to track
-	:param flimit: tuple containing lower and upper frequency limits in MHz
-	:param step: float containing frequency step quantity in MHz
-	:param time: unix time at which to stop scanning
-	:return trackdata: tuple containing a list of scan data and a string indicating the status of the scan
-	'''
+	# Method to track a position and take data for a specific duration.
+	#
+	# :param scanid: the id of the current scan
+	# :param pos: tuple containing galactic latitude and longitude of the position to track
+	# :param flimit: tuple containing lower and upper frequency limits in MHz
+	# :param step: float containing frequency step quantity in MHz
+	# :param time: unix time at which to stop scanning
+	# :return trackdata: tuple containing a list of scan data and a string indicating the status of the scan
 	def track(scanid, pos, flimit, step, time) -> tuple:
 
 		srtdb = sqlite3.connect('srtdata.db')		# establish a connection and cursor into the database
@@ -136,16 +133,15 @@ class Scan:
 
 		return (trackdata, 'complete')
 
-	'''
-	Method to take data at a single drift position for a specific duration.
 
-	:param scanid: the id of the current scan
-	:param pos: tuple containing galactic latitude and longitude of drift position
-	:param flimit: tuple containing lower and upper frequency limits in MHz
-	:param step: float containing frequency step quantity in MHz
-	:param time: unix time at which to stop scanning
-	:return driftdata: tuple containing a list of scan data and a string indicating the status of the scan
-	'''
+	# Method to take data at a single drift position for a specific duration.
+	#
+	# :param scanid: the id of the current scan
+	# :param pos: tuple containing galactic latitude and longitude of drift position
+	# :param flimit: tuple containing lower and upper frequency limits in MHz
+	# :param step: float containing frequency step quantity in MHz
+	# :param time: unix time at which to stop scanning
+	# :return driftdata: tuple containing a list of scan data and a string indicating the status of the scan
 	def drift(scanid, pos, flimit, step, time) -> tuple:
 
 		srtdb = sqlite3.connect('srtdata.db')			# establish a connection and cursor into the database
@@ -191,11 +187,9 @@ class Scan:
 		return (driftdata, 'complete')
 
 
-	'''
-	Method that performs an entire scan and stores the collected data in the database.
-
-	:param nextscan: a dict object containing the parameters of a scan
-	'''
+	# Method that performs an entire scan and stores the collected data in the database.
+	#
+	# :param nextscan: a dict object containing the parameters of a scan
 	def donextscan(nextscan):
 
 		# srtdb = sqlite3.connect('srtdata.db')									# establish a connection and cursor into the database
@@ -265,11 +259,9 @@ class Scan:
 		srtdb.close()
 
 
-	'''
-	Helper method to get the current time from an NTP server.
-
-	:return unixtime: current unix time
-	'''
+	# Helper method to get the current time from an NTP server.
+	#
+	# :return unixtime: current unix time
 	def getcurrenttime():
 
 		c = ntplib.NTPClient()										# initialize ntplib client
@@ -278,12 +270,11 @@ class Scan:
 
 		return unixtime
 
-	'''
-	Helper method to get the azimuth and altitude of a position.
 
-	:param pos: tuple containing right ascension and declination
-	:return azal: tuple containing azimuth and altitude, or a string containing an error code
-	'''
+	# Helper method to get the azimuth and altitude of a position.
+	#
+	# :param pos: tuple containing right ascension and declination
+	# :return azal: tuple containing azimuth and altitude, or a string containing an error code
 	def getazal(pos):
 
 		srtdb = sqlite3.connect('srtdata.db')	# establish a connection and cursor into the database

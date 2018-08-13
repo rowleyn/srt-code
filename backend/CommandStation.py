@@ -31,13 +31,11 @@ class CommandStation:
 		# self.sock.settimeout(DEFAULT_TIMEOUT)
 
 	
-	'''
-	Method that commands the station to move to a particular azimuth and altitude.
-
-	:param newaz: target azimuth
-	:param newal: target altitude
-	:return successful: a boolean indicating whether movement was successfully completed
-	'''
+	# Method that commands the station to move to a particular azimuth and altitude.
+	#
+	# :param newaz: target azimuth
+	# :param newal: target altitude
+	# :return successful: a boolean indicating whether movement was successfully completed
 	def movebyazal(newaz, newal) -> bool:
 
 		### get current station position ###
@@ -198,12 +196,10 @@ class CommandStation:
 		return successful
 
 	
-	'''
-	Method that takes a source from the config sources list and moves the station to the position of that source.
-
-	:param sourcename: name of source as labelled in the SOURCES table in srtdata.db
-	:return:
-	'''
+	# Method that takes a source from the config sources list and moves the station to the position of that source.
+	#
+	# :param sourcename: name of source as labelled in the SOURCES table in srtdata.db
+	# :return:
 	def movebysource(self, sourcename) -> None:
 
 		### get current station information ###
@@ -236,12 +232,10 @@ class CommandStation:
 		self.movebyazal(source.az,source.alt)
 
 	
-	'''
-	Method that commands the station to take a single power reading at a single frequency.
-
-	:para freq: frequency at which to takea reading
-	:return power: float containing the power reading at the frequency freq
-	'''
+	# Method that commands the station to take a single power reading at a single frequency.
+	#
+	# :para freq: frequency at which to takea reading
+	# :return power: float containing the power reading at the frequency freq
 	def readpower(freq) -> float:
 
 		### prepare command message ###
@@ -294,18 +288,18 @@ class CommandStation:
 		ser.close()
 
 		# deprecated
-		'''
+		
 		# receive response from stamp via serial to ethernet converter
 		# stamp sends back one thing at a time, so a loop is necessary to receive all the data
-		response = []
-		for x in range(300):
-			try:
-				j = self.sock.recv(DEFAULT_BUFFER_SIZE)
-				print(j.decode('ascii').strip())
-				response.append(j.decode('ascii').strip())
-			except OSError:
-				break											# TCP socket times out after stamp stops sending
-		'''
+		# response = []
+		# for x in range(300):
+		# 	try:
+		# 		j = self.sock.recv(DEFAULT_BUFFER_SIZE)
+		# 		print(j.decode('ascii').strip())
+		# 		response.append(j.decode('ascii').strip())
+		# 	except OSError:
+		# 		break											# TCP socket times out after stamp stops sending
+		
 
 		# response = self.sock.recv(DEFAULT_BUFFER_SIZE).decode('ascii').strip().split()		# receive and format response data
 
