@@ -183,7 +183,7 @@ def cancelscans(schedule):
 #
 # :param schedule: the schedule to check for scans to run
 # :return currentscanid: the id of the currently running scan
-def runscan(schedule)
+def runscan(schedule):
 
 	srtdb = sqlite3.connect('srtdata.db')		# establish a connection and cursor into the database
 	srtdb.row_factory = sqlite3.Row

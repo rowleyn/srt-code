@@ -7,7 +7,7 @@ Date: June 2018
 '''
 
 import CommandStation
-from astropy import SkyCoord, EarthLocation, AltAz
+from astropy.coordinates import SkyCoord, EarthLocation, AltAz
 from astropy.time import Time
 from astropy.table import Table
 from datetime import date
@@ -21,6 +21,7 @@ NTP_SERVER = 'ntp.carleton.edu'		# NTP server for time retrieval. Change to suit
 class Scan:
 
 	def __init__(self):
+
 		self.station = CommandStation()
 
 

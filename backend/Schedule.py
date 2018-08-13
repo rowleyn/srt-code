@@ -5,7 +5,7 @@ Author: Nathan Rowley
 Date: August 2018
 '''
 
-from astropy import SkyCoord, EarthLocation, AltAz
+from astropy.coordinates import SkyCoord, EarthLocation, AltAz
 from astropy.time import Time
 import sqlite3
 import re
@@ -18,7 +18,7 @@ class Schedule:
 	#
 	# :param starttime: start time of the schedule period in unix time
 	# :param endtime: end time of the schedule period in unix time
-	def__init__(self, starttime, endtime):
+	def __init__(self, starttime, endtime):
 
 		startblock = Block('start', starttime, starttime)				# create Blocks to mark the start and end of the schedule
 
@@ -34,7 +34,7 @@ class Schedule:
 	# :param endtime: end time of the scan in unix time
 	class Block:
 
-		def__init__(self, scanid, starttime, endtime):
+		def __init__(self, scanid, starttime, endtime):
 
 			self.scanid = scanid
 			self.starttime = starttime
@@ -126,7 +126,7 @@ class Schedule:
 
 		for i in range(len(self.schedule - 2)):
 
-			if self.schedule[i].scanid = scanid:
+			if self.schedule[i].scanid == scanid:
 
 				del self.schedule[i]
 				break

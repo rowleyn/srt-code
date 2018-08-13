@@ -23,20 +23,13 @@ import serial
 # DEFAULT_TIMEOUT = 10
 
 class CommandStation:
-
-	def __init__(self):
-		# self.port = SEND_PORT
-		# self.addr = SEND_IP
-		# self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		# self.sock.settimeout(DEFAULT_TIMEOUT)
-
 	
 	# Method that commands the station to move to a particular azimuth and altitude.
 	#
 	# :param newaz: target azimuth
 	# :param newal: target altitude
 	# :return successful: a boolean indicating whether movement was successfully completed
-	def movebyazal(newaz, newal) -> bool:
+	def movebyazal(newaz, newal):
 
 		### get current station position ###
 
@@ -200,7 +193,7 @@ class CommandStation:
 	#
 	# :param sourcename: name of source as labelled in the SOURCES table in srtdata.db
 	# :return:
-	def movebysource(self, sourcename) -> None:
+	def movebysource(self, sourcename):
 
 		### get current station information ###
 
@@ -236,7 +229,7 @@ class CommandStation:
 	#
 	# :para freq: frequency at which to takea reading
 	# :return power: float containing the power reading at the frequency freq
-	def readpower(freq) -> float:
+	def readpower(freq):
 
 		### prepare command message ###
 
