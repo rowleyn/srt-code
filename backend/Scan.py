@@ -30,7 +30,7 @@ class Scan:
 	# :param azal: tuple containing azimuth and altitude of scan position
 	# :param freq: frequency in MHz at which to measure
 	# :return scan: tuple containing a single power measurement and boolean indicating successful movement
-	def singlescan(self, azal, freq) -> tuple:
+	def singlescan(self, azal, freq):
 
 		movesuccess = self.station.movebyazal(azal[0], azal[1])		# move station to scan position
 
@@ -51,7 +51,7 @@ class Scan:
 	# :param flimit: tuple containing lower and upper frequency limits in MHz
 	# :param step: float containing frequency step quantity in MHz
 	# :return data: dictionary containing a single spectrum with start and end times and a time correction value
-	def singlespectrum(azal, flimit, step) -> dict:
+	def singlespectrum(azal, flimit, step):
 
 		spectrum = []
 
