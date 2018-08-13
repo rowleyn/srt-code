@@ -156,7 +156,7 @@ $( function() {
 	$( "#dialog-searchform #download" ).button().on( "click", function( event ) {
 
 		event.preventDefault();
-		checkedentries = $( "#search-results tbody .entry" ).has( "input:checked" );
+		var checkedentries = $( "#search-results tbody .entry" ).has( "input:checked" );
 		if ( checkedentries.length !== 0 ) {
 
 			var scanids = [];
@@ -191,7 +191,7 @@ $( function() {
 	$( "#dialog-searchform #delete" ).button().on( "click", function( event ) {
 
 		event.preventDefault();
-		checkedentries = $( "#search-results tbody .entry" ).has( "input:checked" );
+		var checkedentries = $( "#search-results tbody .entry" ).has( "input:checked" );
 		if( checkedentries.length !== 0 ) {
 
 			var scanids = [];
@@ -201,7 +201,7 @@ $( function() {
 				scanids.push( $( checkedentries[i] ).find( "#id" ).html() );
 			};
 
-			var listjson = JSON.stringify( scannames );
+			var listjson = JSON.stringify( scanids );
 
 			$.post( "/deletescans", listjson, function( response ) {
 
@@ -299,12 +299,6 @@ $( function() {
 		};
 	}
 
-	// simple function for generating random numbers
-	function getRndInteger(min, max) {
-
-	    return Math.floor(Math.random() * (max - min) ) + min;
-	}
-
 	/*
 		Builds json containing a new scan populated from the jquery ui dialog form.
 		Posts the new scan to the server using ajax. 
@@ -337,7 +331,7 @@ $( function() {
 			}, "json");
 
 			// close the dialog form
-			dialog.dialog( "close" );
+			scandialog.dialog( "close" );
 		}
 	}
 
@@ -438,13 +432,13 @@ $( function() {
 			else {
 
 				valid = valid && checkRegexp( ras, /(?:[0-9]|1\d|2[0-4])h(?:[0-9]|[1-5]\d|60)m(?:[0-9]|[1-5]\d|60)s/, "Right ascension must be specified in sidereal time." );
-				valid = valid && checkRegexp( dec, /-?[0-9]+\.?[0-9]*/, "Declination must be a real number." ) && checkSize( lon, "declination", -90, 90 );
+				valid = valid && checkRegexp( dec, /-?[0-9]+\.?[0-9]*/, "Declination must be a real number." ) && checkSize( dec, "declination", -90, 90 );
 			};
 		}
 		else {
 
 			valid = valid && checkRegexp( ras, /(?:[0-9]|1\d|2[0-4])h(?:[0-9]|[1-5]\d|60)m(?:[0-9]|[1-5]\d|60)s/, "Right ascension must be specified in sidereal time." );
-			valid = valid && checkRegexp( dec, /-?[0-9]+\.?[0-9]*/, "Declination must be a real number." ) && checkSize( lon, "declination", -90, 90 );
+			valid = valid && checkRegexp( dec, /-?[0-9]+\.?[0-9]*/, "Declination must be a real number." ) && checkSize( dec, "declination", -90, 90 );
 		}
 
 		valid = valid && checkRegexp( duration, /[0-9]{2}h[0-9]{2}m[0-9]{2}s/, "Duration must be in the form '00h00m00s'." );
