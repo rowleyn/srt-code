@@ -7,6 +7,7 @@ Date: June 2018
 '''
 
 from flask import Flask, render_template, make_response, send_file, request, redirect, url_for, session
+from astral import Astral
 import json
 import sqlite3
 import zipfile
@@ -157,9 +158,9 @@ def submit_scan():
 	valid = valid and len(newscan['name']) <= 30
 	valid = valid and (newscan['type'] == 'track' or newscan['type'] == 'drift')
 	valid = valid and len(newscan['source']) <= 30
-	valid = valid and (re.fullmatch('(?:[0-9]|1\d|2[0-4])h(?:[0-9]|[1-5]\d|60)m(?:[0-9]|[1-5]\d|60)s', newscan['ras']) != None)
-	valid = valid and (re.fullmatch('-?[0-9]+\.?[0-9]*', newscan['dec']) != None) and int(newscan['dec']) >= -90 and int(newscan['dec']) <= 90
-	valid = valid and (re.fullmatch('[0-9]{2}h[0-9]{2}m[0-9]{2}s', newscan['duration']) != None)
+	valid = valid and (re.fullmatch('0*(?:[0-9]|1\d|2[0-3])h0*(?:[0-9]|[1-5]\d)m0*(?:[0-9]|[1-5]\d)s|0*24h0+m0+s', newscan['ras']) != None)
+	valid = valid and (re.fullmatch('-?0*(?:[0-9]|[1-8]\d)d0*(?:[0-9]|[1-5]\d)m0*(?:[0-9]|[1-5]\d)s|-?0*90d0+m0+s', newscan['dec']) != None)
+	valid = valid and (re.fullmatch('0*[0-7]h0*(?:[0-9]|[1-5]\d)m0*(?:[0-9]|[1-5]\d)s|0*8h0+m0+s', newscan['duration']) != None)
 	valid = valid and (re.fullmatch('[0-9]+\.?[0-9]*', newscan['freqlower']) != None) and int(newscan['freqlower']) >= 0 and int(newscan['freqlower']) <= 10000
 	valid = valid and (re.fullmatch('[0-9]+\.?[0-9]*', str(newscan['frequpper'])) != None) and int(newscan['frequpper']) >= 0 and int(newscan['frequpper']) <= 10000
 	valid = valid and newscan['freqlower'] <= newscan['frequpper']
@@ -181,22 +182,29 @@ def submit_scan():
 
 		if newscan['source'] != 'no source':
 
-			sourcepos = cur.execute("SELECT * FROM SOURCES WHERE NAME = ?", (newscan['source'],)).fetchone()
+			if newscan['source'] == 'sun':
 
-			if sourcepos == None:
+				newscan['ras'] = 'sunras'
+				newscan['dec'] = 'sundec'
 
-				today = date.today()
+			else:
 
-				cur.execute("INSERT INTO SCANIDS VALUES (?,?,?)", (scanid, newscan['name'], 'sourceerror'))
-				cur.execute("INSERT INTO HISTORY VALUES (?,?,?,?,?,?)", (scanid, newscan['name'], newscan['type'], today.day, today.month, today.year))
-				srtdb.commit()
+				sourcepos = cur.execute("SELECT * FROM SOURCES WHERE NAME = ?", (newscan['source'],)).fetchone()
 
-				srtdb.close()
+				if sourcepos == None:
 
-				return scheduleGetter()
+					today = date.today()
 
-			newscan['ras'] = sourcepos['ras']
-			newscan['dec'] = sourcepos['dec']
+					cur.execute("INSERT INTO SCANIDS VALUES (?,?,?)", (scanid, newscan['name'], 'sourceerror'))
+					cur.execute("INSERT INTO SCANHISTORY VALUES (?,?,?,?,?,?)", (scanid, newscan['name'], newscan['type'], today.day, today.month, today.year))
+					srtdb.commit()
+
+					srtdb.close()
+
+					return scheduleGetter()
+
+				newscan['ras'] = sourcepos['ras']
+				newscan['dec'] = sourcepos['dec']
 
 		config = cur.execute("SELECT * FROM CONFIG").fetchone()
 

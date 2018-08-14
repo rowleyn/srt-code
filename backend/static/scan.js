@@ -431,17 +431,17 @@ $( function() {
 			}
 			else {
 
-				valid = valid && checkRegexp( ras, /(?:[0-9]|1\d|2[0-4])h(?:[0-9]|[1-5]\d|60)m(?:[0-9]|[1-5]\d|60)s/, "Right ascension must be specified in sidereal time." );
-				valid = valid && checkRegexp( dec, /-?[0-9]+\.?[0-9]*/, "Declination must be a real number." ) && checkSize( dec, "declination", -90, 90 );
+				valid = valid && checkRegexp( ras, /0*(?:[0-9]|1\d|2[0-3])h0*(?:[0-9]|[1-5]\d)m0*(?:[0-9]|[1-5]\d)s|0*24h0+m0+s/, "Right ascension must be specified in sidereal time." );
+				valid = valid && checkRegexp( dec, /-?0*(?:[0-9]|[1-8]\d)d0*(?:[0-9]|[1-5]\d)m0*(?:[0-9]|[1-5]\d)s|-?0*90d0+m0+s/, "Declination must be between 90 and -90 degrees." )
 			};
 		}
 		else {
 
-			valid = valid && checkRegexp( ras, /(?:[0-9]|1\d|2[0-4])h(?:[0-9]|[1-5]\d|60)m(?:[0-9]|[1-5]\d|60)s/, "Right ascension must be specified in sidereal time." );
-			valid = valid && checkRegexp( dec, /-?[0-9]+\.?[0-9]*/, "Declination must be a real number." ) && checkSize( dec, "declination", -90, 90 );
+			valid = valid && checkRegexp( ras, /0*(?:[0-9]|1\d|2[0-3])h0*(?:[0-9]|[1-5]\d)m0*(?:[0-9]|[1-5]\d)s|0*24h0+m0+s/, "Right ascension must be specified in sidereal time." );
+			valid = valid && checkRegexp( dec, /-?0*(?:[0-9]|[1-8]\d)d0*(?:[0-9]|[1-5]\d)m0*(?:[0-9]|[1-5]\d)s|-?0*90d0+m0+s/, "Declination must be between 90 and -90 degrees." )
 		}
 
-		valid = valid && checkRegexp( duration, /[0-9]{2}h[0-9]{2}m[0-9]{2}s/, "Duration must be in the form '00h00m00s'." );
+		valid = valid && checkRegexp( duration, /0*[0-7]h0*(?:[0-9]|[1-5]\d)m0*(?:[0-9]|[1-5]\d)s|0*8h0+m0+s/, "Duration must be eight hours or less." );
 		valid = valid && checkRegexp( freqlower, /[0-9]+\.?[0-9]*/, "Minimum frequency must be a real number." ) && checkSize( freqlower, "minimum frequency", 0, 10000 );
 		valid = valid && checkRegexp( freqlower, /[0-9]+\.?[0-9]*/, "Maximum frequency must be a real number." ) && checkSize( freqlower, "maximum frequency", 0, 10000 );
 		valid = valid && checkRegexp( step_num, /1[0-9]*/, "Step number must be a positive integer." ) && checkSize( step_num, "step number", 1, 1000000 );
