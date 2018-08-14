@@ -161,8 +161,8 @@ def submit_scan():
 	valid = valid and (re.fullmatch('0*(?:[0-9]|1\d|2[0-3])h0*(?:[0-9]|[1-5]\d)m0*(?:[0-9]|[1-5]\d)s|0*24h0+m0+s', newscan['ras']) != None)
 	valid = valid and (re.fullmatch('-?0*(?:[0-9]|[1-8]\d)d0*(?:[0-9]|[1-5]\d)m0*(?:[0-9]|[1-5]\d)s|-?0*90d0+m0+s', newscan['dec']) != None)
 	valid = valid and (re.fullmatch('0*[0-7]h0*(?:[0-9]|[1-5]\d)m0*(?:[0-9]|[1-5]\d)s|0*8h0+m0+s', newscan['duration']) != None)
-	valid = valid and (re.fullmatch('[0-9]+\.?[0-9]*', newscan['freqlower']) != None) and int(newscan['freqlower']) >= 0 and int(newscan['freqlower']) <= 10000
-	valid = valid and (re.fullmatch('[0-9]+\.?[0-9]*', str(newscan['frequpper'])) != None) and int(newscan['frequpper']) >= 0 and int(newscan['frequpper']) <= 10000
+	valid = valid and (re.fullmatch('[0-9]+\.?[0-9]*', newscan['freqlower']) != None) and float(newscan['freqlower']) >= 0 and float(newscan['freqlower']) <= 10000
+	valid = valid and (re.fullmatch('[0-9]+\.?[0-9]*', str(newscan['frequpper'])) != None) and float(newscan['frequpper']) >= 0 and float(newscan['frequpper']) <= 10000
 	valid = valid and newscan['freqlower'] <= newscan['frequpper']
 	valid = valid and (re.fullmatch('1[0-9]*', newscan['stepnumber']) != None) and int(newscan['stepnumber']) >= 1 and int(newscan['stepnumber']) <= 1000000
 
@@ -221,7 +221,7 @@ def submit_scan():
 			return scheduleGetter()
 
 		# build a new row for the database containing scan parameters
-		params = (scanid, newscan['name'], newscan['type'], newscan['source'], newscan['ras'], int(newscan['dec']), newscan['duration'], int(newscan['freqlower']), int(newscan['frequpper']), int(newscan['stepnumber']))
+		params = (scanid, newscan['name'], newscan['type'], newscan['source'], newscan['ras'], newscan['dec'], newscan['duration'], float(newscan['freqlower']), float(newscan['frequpper']), int(newscan['stepnumber']))
 
 		cur.execute("INSERT INTO SCANIDS VALUES (?,?,?)", (scanid, newscan['name'], 'submitted'))
 		cur.execute("INSERT INTO SCANPARAMS VALUES (?,?,?,?,?,?,?,?,?,?)", params)	# insert new scan into database and commit change
@@ -279,8 +279,8 @@ def add_source():
 	valid = True
 
 	valid = valid and len(newsource['name']) <= 30
-	valid = valid and (re.fullmatch('(?:[0-9]|1\d|2[0-4])h(?:[0-9]|[1-5]\d|60)m(?:[0-9]|[1-5]\d|60)s', newsource['ras']) != None)
-	valid = valid and (re.fullmatch('-?[0-9]+\.?[0-9]*', newsource['dec']) != None)
+	valid = valid and (re.fullmatch('0*(?:[0-9]|1\d|2[0-3])h0*(?:[0-9]|[1-5]\d)m0*(?:[0-9]|[1-5]\d)s|0*24h0+m0+s', newsource['ras']) != None)
+	valid = valid and (re.fullmatch('-?0*(?:[0-9]|[1-8]\d)d0*(?:[0-9]|[1-5]\d)m0*(?:[0-9]|[1-5]\d)s|-?0*90d0+m0+s', newsource['dec']) != None)
 
 	if valid:
 
@@ -339,7 +339,7 @@ def update_config():
 	if newconfig[0] == 'nameloc':
 
 		valid = valid and len(newconfig[1]) <= 100						# check client data for validity
-		valid = valid and newconfig[2] >= -90 and newconfig[2] <= 90
+		valid = valid and float(newconfig[2]) >= -90 and float(newconfig[2]) <= 90
 		valid = valid and newconfig[3] >= -180 and newconfig[3] <= 180
 		valid = valid and newconfig[4] >= 0 and newconfig[4] <= 10000
 
