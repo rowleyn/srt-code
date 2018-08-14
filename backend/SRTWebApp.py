@@ -205,7 +205,7 @@ def submit_scan():
 			today = date.today()
 
 			cur.execute("INSERT INTO SCANIDS VALUES (?,?,?)", (scanid, newscan['name'], 'freqboundserror'))
-			cur.execute("INSERT INTO HISTORY VALUES (?,?,?,?,?,?)", (scanid, newscan['name'], newscan['type'], today.day, today.month, today.year))
+			cur.execute("INSERT INTO SCANHISTORY VALUES (?,?,?,?,?,?)", (scanid, newscan['name'], newscan['type'], today.day, today.month, today.year))
 			srtdb.commit()
 
 			srtdb.close()
