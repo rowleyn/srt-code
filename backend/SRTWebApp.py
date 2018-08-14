@@ -208,7 +208,7 @@ def submit_scan():
 
 		config = cur.execute("SELECT * FROM CONFIG").fetchone()
 
-		if newscan['freqlower'] < config['freqlower'] or newscan['frequpper'] > config['frequpper']:
+		if float(newscan['freqlower']) < config['freqlower'] or float(newscan['frequpper']) > config['frequpper']:
 
 			today = date.today()
 
