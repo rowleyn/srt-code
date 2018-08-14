@@ -309,7 +309,7 @@ $( function() {
 		if ( $( "#tracktype" ).val() === "source" ) {
 
 			ras.val( "0h0m0s" );
-			dec.val( 0 );
+			dec.val( "0d0m0s" );
 		}
 
 		// submit form if it is valid

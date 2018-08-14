@@ -30,7 +30,7 @@ normal_password = 'something'
 max_users = 10
 current_users = 0
 
-# url for loggin in, all urls redirect to this one if a user is not logged in
+# url for logging in, all urls redirect to this one if a user is not logged in
 @app.route('/login', methods=['GET','POST'])
 def login():
 
