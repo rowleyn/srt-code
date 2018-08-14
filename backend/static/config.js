@@ -203,8 +203,8 @@ $( function() {
 		var valid = true;
 
 		valid = valid && checkRegexp( dialog.find( "#name" ), /.{1,30}/, "Name must be no more than 30 characters long." );
-		valid = valid && checkRegexp( dialog.find( "#ras" ), /(?:[0-9]|1\d|2[0-4])h(?:[0-9]|[1-5]\d|60)m(?:[0-9]|[1-5]\d|60)s/, "Right ascension must be specified in sidereal time." )
-		valid = valid && checkRegexp( dialog.find( "#dec" ), /-?[0-9]+\.?[0-9]*/, "Declination must be a real number." ) && checkSize( dialog.find( "#dec" ), "declination", -90, 90 );
+		valid = valid && checkRegexp( dialog.find( "#ras" ), /0*(?:[0-9]|1\d|2[0-3])h0*(?:[0-9]|[1-5]\d)m0*(?:[0-9]|[1-5]\d)s|0*24h0+m0+s/, "Right ascension must be specified in sidereal time." )
+		valid = valid && checkRegexp( dialog.find( "#dec" ), /-?0*(?:[0-9]|[1-8]\d)d0*(?:[0-9]|[1-5]\d)m0*(?:[0-9]|[1-5]\d)s|-?0*90d0+m0+s/, "Declination must be between -90 and 90 degrees." );
 
 		return valid;
 	}
