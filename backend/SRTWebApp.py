@@ -338,8 +338,12 @@ def update_config():
 	# return subsets of config params based on keyword
 	if newconfig[0] == 'nameloc':
 
+		newconfig[2] = float(newconfig[2])		# convert type of incoming data
+		newconfig[3] = float(newconfig[3])
+		newconfig[4] = float(newconfig[4])
+
 		valid = valid and len(newconfig[1]) <= 100						# check client data for validity
-		valid = valid and float(newconfig[2]) >= -90 and float(newconfig[2]) <= 90
+		valid = valid and newconfig[2] >= -90 and newconfig[2] <= 90
 		valid = valid and newconfig[3] >= -180 and newconfig[3] <= 180
 		valid = valid and newconfig[4] >= 0 and newconfig[4] <= 10000
 
@@ -348,6 +352,11 @@ def update_config():
 			cur.execute("UPDATE CONFIG SET NAME = ?, LAT = ?, LON = ?, HEIGHT = ?", (newconfig[1], newconfig[2], newconfig[3], newconfig[4]))
 
 	elif newconfig[0] == 'movelimits':
+
+		newconfig[1] = float(newconfig[1])		# convert type of incoming data
+		newconfig[2] = float(newconfig[2])
+		newconfig[3] = float(newconfig[3])
+		newconfig[4] = float(newconfig[4])
 
 		valid = valid and newconfig[1] >= 0 and newconfig[1] <= 360			# check client data for validity
 		valid = valid and newconfig[2] >= 0 and newconfig[1] <= 360
@@ -361,6 +370,10 @@ def update_config():
 			cur.execute("UPDATE CONFIG SET AZLOWER = ?, AZUPPER = ?, ALLOWER = ?, ALUPPER = ?", (newconfig[1], newconfig[2], newconfig[3], newconfig[4]))
 
 	else:
+
+		newconfig[1] = float(newconfig[1])		# convert type of incoming data
+		newconfig[2] = float(newconfig[2])
+		newconfig[3] = float(newconfig[3])
 
 		valid = valid and newconfig[1] <= 0 and newconfig[1] >= 10000		# check client data for validity
 		valid = valid and newconfig[2] <= 0 and newconfig[2] >= 10000
