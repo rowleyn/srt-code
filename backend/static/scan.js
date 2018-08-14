@@ -4,7 +4,7 @@ $( function() {
 	// initial setup
 	var scandialog,	searchdialog, tips = $( ".validateTips" ),
 		type = $( "#dialog-scanform #type" ), duration = $( "#dialog-scanform #duration" ), freqlower = $( "#dialog-scanform #freqlower"), frequpper = $( "#dialog-scanform #frequpper" ),
-		name = $( "#dialog-scanform #name" ), position = $( "#dialog-scanform #position" ), ras = position.find( "#dialog-scanform #ras" ), dec = position.find( "#dialog-scanform #dec" ),
+		name = $( "#dialog-scanform #name" ), position = $( "#dialog-scanform #position" ), ras = position.find( "#ras" ), dec = position.find( "#dec" ),
 		step_num = $( "#dialog-scanform #stepnum" ), source = $( "#dialog-scanform #source" ), sourcelist = $( "#dialog-scanform #sourcelist" );
 
 	var allFields = $( [] ).add( type ).add( duration ).add( freqlower ).add( frequpper ).add( step_num ).add( name ).add( ras ).add( dec ).add( sourcelist );
@@ -308,8 +308,8 @@ $( function() {
 		// make sure position is not undefined if it is unused
 		if ( $( "#tracktype" ).val() === "source" ) {
 
-			position.find( "#ras" ).val( "0h0m0s" );
-			position.find( "#dec" ).val( 0 );
+			ras.val( "0h0m0s" );
+			dec.val( 0 );
 		}
 
 		// submit form if it is valid
