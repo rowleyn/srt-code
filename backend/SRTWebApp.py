@@ -158,12 +158,12 @@ def submit_scan():
 	valid = valid and (newscan['type'] == 'track' or newscan['type'] == 'drift')
 	valid = valid and len(newscan['source']) <= 30
 	valid = valid and (re.fullmatch('(?:[0-9]|1\d|2[0-4])h(?:[0-9]|[1-5]\d|60)m(?:[0-9]|[1-5]\d|60)s', newscan['ras']) != None)
-	valid = valid and (re.fullmatch('-?[0-9]+\.?[0-9]*', newscan['dec']) != None)
+	valid = valid and (re.fullmatch('-?[0-9]+\.?[0-9]*', newscan['dec']) != None) and int(newscan['dec']) >= -90 and int(newscan['dec']) <= 90
 	valid = valid and (re.fullmatch('[0-9]{2}h[0-9]{2}m[0-9]{2}s', newscan['duration']) != None)
-	valid = valid and (re.fullmatch('[0-9]+\.?[0-9]*', str(newscan['freqlower'])) != None) and newscan['freqlower'] >= 0 and newscan['freqlower'] <= 10000
-	valid = valid and (re.fullmatch('[0-9]+\.?[0-9]*', str(newscan['frequpper'])) != None) and newscan['frequpper'] >= 0 and newscan['frequpper'] <= 10000
+	valid = valid and (re.fullmatch('[0-9]+\.?[0-9]*', newscan['freqlower']) != None) and int(newscan['freqlower']) >= 0 and int(newscan['freqlower']) <= 10000
+	valid = valid and (re.fullmatch('[0-9]+\.?[0-9]*', str(newscan['frequpper'])) != None) and int(newscan['frequpper']) >= 0 and int(newscan['frequpper']) <= 10000
 	valid = valid and newscan['freqlower'] <= newscan['frequpper']
-	valid = valid and (re.fullmatch('1[0-9]*', str(newscan['stepnumber'])) != None) and newscan['stepnumber'] >= 1 and newscan['stepnumber'] <= 1000000
+	valid = valid and (re.fullmatch('1[0-9]*', newscan['stepnumber']) != None) and int(newscan['stepnumber']) >= 1 and int(newscan['stepnumber']) <= 1000000
 
 	if valid:
 
@@ -213,7 +213,7 @@ def submit_scan():
 			return scheduleGetter()
 
 		# build a new row for the database containing scan parameters
-		params = (scanid, newscan['name'], newscan['type'], newscan['source'], newscan['ras'], newscan['dec'], newscan['duration'], newscan['freqlower'], newscan['frequpper'], newscan['stepnumber'])
+		params = (scanid, newscan['name'], newscan['type'], newscan['source'], newscan['ras'], int(newscan['dec']), newscan['duration'], int(newscan['freqlower']), int(newscan['frequpper']), int(newscan['stepnumber']))
 
 		cur.execute("INSERT INTO SCANIDS VALUES (?,?,?)", (scanid, newscan['name'], 'submitted'))
 		cur.execute("INSERT INTO SCANPARAMS VALUES (?,?,?,?,?,?,?,?,?,?)", params)	# insert new scan into database and commit change
