@@ -202,9 +202,9 @@ $( function() {
 
 		var valid = true;
 
-		valid = valid && checkRegexp( dialog.find( "#name" ), /.{1,30}/, "Name must be no more than 30 characters long." );
-		valid = valid && checkRegexp( dialog.find( "#ras" ), /0*(?:[0-9]|1\d|2[0-3])h0*(?:[0-9]|[1-5]\d)m0*(?:[0-9]|[1-5]\d)s|0*24h0+m0+s/, "Right ascension must be specified in sidereal time." )
-		valid = valid && checkRegexp( dialog.find( "#dec" ), /-?0*(?:[0-9]|[1-8]\d)d0*(?:[0-9]|[1-5]\d)m0*(?:[0-9]|[1-5]\d)s|-?0*90d0+m0+s/, "Declination must be between -90 and 90 degrees." );
+		valid = valid && checkRegexp( dialog.find( "#name" ), /^.{1,30}$/, "Name must be no more than 30 characters long." );
+		valid = valid && checkRegexp( dialog.find( "#ras" ), /^0*(?:\d|1\d|2[0-3])h0*(?:\d|[1-5]\d)m0*(?:\d|[1-5]\d)s$|^0*24h0+m0+s$/, "Right ascension must be specified in sidereal time." )
+		valid = valid && checkRegexp( dialog.find( "#dec" ), /^-?0*(?:\d|[1-8]\d)d0*(?:\d|[1-5]\d)m0*(?:\d|[1-5]\d)s$|^-?0*90d0+m0+s$/, "Declination must be between -90 and 90 degrees." );
 
 		return valid;
 	}
@@ -215,18 +215,18 @@ $( function() {
 
 		if ( table.attr( "id" ) === "nameloc" ) {
 
-			valid = valid && checkRegexp( table.find( "#name" ), /.{1,100}/, "Name must be no more that 100 characters long." );
-			valid = valid && checkRegexp( table.find( "#lat" ), /-?[0-9]+\.?[0-9]*/, "Latitude must be a real number." ) && checkSize( table.find( "#lat" ), "latitude", -90, 90 );
-			valid = valid && checkRegexp( table.find( "#lon" ), /[0-9]+\.?[0-9]*/, "Longitude must be a real number." ) && checkSize( table.find( "#lon" ), "longitude", -180, 180 );
-			valid = valid && checkRegexp( table.find( "#height" ), /[0-9]+\.?[0-9]*/, "Height must be a positive real number." ) && checkSize( table.find( "#height" ), "height", 0, 10000 );
+			valid = valid && checkRegexp( table.find( "#name" ), /^.{1,100}$/, "Name must be no more that 100 characters long." );
+			valid = valid && checkRegexp( table.find( "#lat" ), /^-?[0-9]+\.?[0-9]*$/, "Latitude must be a real number." ) && checkSize( table.find( "#lat" ), "latitude", -90, 90 );
+			valid = valid && checkRegexp( table.find( "#lon" ), /^[0-9]+\.?[0-9]*$/, "Longitude must be a real number." ) && checkSize( table.find( "#lon" ), "longitude", -180, 180 );
+			valid = valid && checkRegexp( table.find( "#height" ), /^[0-9]+\.?[0-9]*$/, "Height must be a positive real number." ) && checkSize( table.find( "#height" ), "height", 0, 10000 );
 		}
 		else if ( table.attr( "id" ) === "movelimits" ) {
 
-			valid = valid && checkRegexp( table.find( "#azlower" ), /[0-9]+\.?[0-9]*/, "Azimuth must be a positive real number." ) && checkSize( table.find( "#azlower" ), "azimuth", 0, 360 );
-			valid = valid && checkRegexp( table.find( "#azupper" ), /[0-9]+\.?[0-9]*/, "Azimuth must be a positive real number." ) && checkSize( table.find( "#azupper" ), "azimuth", 0, 360 );
+			valid = valid && checkRegexp( table.find( "#azlower" ), /^[0-9]+\.?[0-9]*$/, "Azimuth must be a positive real number." ) && checkSize( table.find( "#azlower" ), "azimuth", 0, 360 );
+			valid = valid && checkRegexp( table.find( "#azupper" ), /^[0-9]+\.?[0-9]*$/, "Azimuth must be a positive real number." ) && checkSize( table.find( "#azupper" ), "azimuth", 0, 360 );
 			valid = valid && checkOrder( table.find( "#azlower" ), table.find( "#azupper" ), "Minimum azimuth", "maximum azimuth" );
-			valid = valid && checkRegexp( table.find( "#allower" ), /[0-9]+\.?[0-9]*/, "Altitude must be a positive real number." ) && checkSize( table.find( "#allower" ), "altitude", 0, 180 );
-			valid = valid && checkRegexp( table.find( "#alupper" ), /[0-9]+\.?[0-9]*/, "Altitude must be a positive real number." ) && checkSize( table.find( "#alupper" ), "altitude", 0, 180 );
+			valid = valid && checkRegexp( table.find( "#allower" ), /^[0-9]+\.?[0-9]*$/, "Altitude must be a positive real number." ) && checkSize( table.find( "#allower" ), "altitude", 0, 180 );
+			valid = valid && checkRegexp( table.find( "#alupper" ), /^[0-9]+\.?[0-9]*$/, "Altitude must be a positive real number." ) && checkSize( table.find( "#alupper" ), "altitude", 0, 180 );
 			valid = valid && checkOrder( table.find( "#allower" ), table.find( "#alupper" ), "Minimum altitude", "maximum altitude" );
 		}
 		else {
