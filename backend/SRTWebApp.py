@@ -224,7 +224,7 @@ def submit_scan():
 		params = (scanid, newscan['type'], newscan['source'], newscan['ras'], newscan['dec'], newscan['duration'], float(newscan['freqlower']), float(newscan['frequpper']), int(newscan['stepnumber']))
 
 		cur.execute("INSERT INTO SCANIDS VALUES (?,?,?)", (scanid, newscan['name'], 'submitted'))
-		cur.execute("INSERT INTO SCANPARAMS VALUES (?,?,?,?,?,?,?,?,?,?)", params)	# insert new scan into database and commit change
+		cur.execute("INSERT INTO SCANPARAMS VALUES (?,?,?,?,?,?,?,?,?)", params)	# insert new scan into database and commit change
 		srtdb.commit()
 
 	srtdb.close()	# database connection no longer needed
