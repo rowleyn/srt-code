@@ -10,7 +10,6 @@ from astropy.coordinates import SkyCoord, EarthLocation, AltAz
 from astropy.time import Time
 import socket
 import time
-import ntplib
 import sqlite3
 import serial
 
