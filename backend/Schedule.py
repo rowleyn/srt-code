@@ -116,8 +116,8 @@ class Schedule:
 
 					return status
 
-				starttime += 60			# if scan is not valid within the time frame, adjust the frame a minute forward
-				endtime += 60
+				starttime += 300			# if scan is not valid within the time frame, adjust the frame five minutes forward
+				endtime += 300
 
 			starttime = self.schedule[i+1].endtime + 300	# update starttime to after the next Block
 
@@ -194,7 +194,7 @@ class Schedule:
 				middlepos = position.transform_to(middleframe)
 				endpos = position.transform_to(endframe)
 
-		except ValueError as e:										# if the position can't be transformed, return False
+		except ValueError as e:										# if the position can't be transformed, return a position error
 
 			return 'positionerror'
 
@@ -210,6 +210,14 @@ class Schedule:
 			middleal = float(middlepos.alt.to_string(unit=u.deg, decimal=True))
 			endaz = float(endpos.az.to_string(unit=u.deg, decimal=True))
 			endal = float(endpos.alt.to_string(unit=u.deg, decimal=True))
+			
+		if startal < 0 or startal > 180:		# if a position has a negative altitude, object is not in the sky, so return position error
+			
+			return 'positionerror'
+			
+		if scantype == 'track' and (middleal < 0 or middleal > 180 or endal < 0 or endal > 180):
+			
+			return 'positionerror'
 
 		valid = True 													# check that the scan stays within telscope movement bounds
 
@@ -224,6 +232,8 @@ class Schedule:
 			valid = valid and endal >= albounds[0] and endal <= albounds[1]
 
 		if not valid:
+			
+			print(str(startaz) + ' ' + str(startal))
 
 			return 'moveboundserror'
 
@@ -254,19 +264,27 @@ def main():
 	today = datetime.date.today()
 
 	nighttimes = a.night_utc(today, config['lat'], config['lon'])
+	
+	print(nighttimes[0].isoformat() + ' ' + nighttimes[1].isoformat())
 
-	dusk = Time(nighttimes[0], format = 'datetime', scale = 'utc').unix
-	dawn = Time(nighttimes[1], format = 'datetime', scale = 'utc').unix
+	dusk = nighttimes[0].timestamp()
+	dawn = nighttimes[1].timestamp()
 
 	schedule = Schedule(dusk, dawn)
+	
+	cur.execute("DELETE FROM SCHEDULE")
 
-	cur.execute("UPDATE CONFIG SET LAT = ?, LON = ?", (44.45, -93.16))
-	cur.execute("INSERT INTO SOURCES VALUES (?,?,?)", ('polaris', '2h31m49s', '89d15m50s'))
-	cur.execute("INSERT INTO SCANIDS VALUES (?,?,?)", (-20, 'scheduletest', 'submitted'))
-	cur.execute("INSERT INTO SCANPARAMS VALUES (?,?,?,?,?,?,?,?,?)", (-20, 'track', 'polaris', '2h31m49s', '89d15m50s', '0h30m0s', 1500, 1510, 10))
+	# cur.execute("INSERT INTO SOURCES VALUES (?,?,?)", ('sigma octantis', '21h8m47s', '-88d57m23s'))
+	# cur.execute("INSERT INTO SCANIDS VALUES (?,?,?)", (-30, 'invalidtest', 'submitted'))
+	# cur.execute("INSERT INTO SCANPARAMS VALUES (?,?,?,?,?,?,?,?,?)", (-30, 'track', 'sigma octantis', '21h8m47s', '-88d57m23s', '1h0m0s', 1500, 1510, 10))
+	# cur.execute("UPDATE CONFIG SET LAT = ?, LON = ?", (44.45, -93.16))
+	# cur.execute("INSERT INTO SOURCES VALUES (?,?,?)", ('polaris', '2h31m49s', '89d15m50s'))
+	# cur.execute("INSERT INTO SCANIDS VALUES (?,?,?)", (-20, 'scheduletest', 'submitted'))
+	# cur.execute("INSERT INTO SCANPARAMS VALUES (?,?,?,?,?,?,?,?,?)", (-20, 'track', 'polaris', '2h31m49s', '89d15m50s', '0h30m0s', 1500, 1510, 10))
 	srtdb.commit()
 
 	schedule.schedulescan(-20, getcurrenttime())
+	schedule.schedulescan(-30, getcurrenttime())
 
 	for block in schedule.schedule:
 
