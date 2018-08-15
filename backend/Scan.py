@@ -283,10 +283,12 @@ class Scan:
 	# :return unixtime: current unix time
 	def getcurrenttime():
 
-		c = ntplib.NTPClient()										# initialize ntplib client
-		ntptime = c.request(NTP_SERVER, version = 4)				# get current time from Carleton's NTP server
-		unixtime = ntptime.tx_time									# convert ntp time to unix time
-
+		NTP_SERVER = 'ntp.carleton.edu'
+	
+		c = ntplib.NTPClient()								# initialize ntplib client
+		ntptime = c.request(NTP_SERVER, version = 4)		# get current time from Carleton's NTP server
+		unixtime = ntptime.tx_time - 2207520000				# convert ntp time to unix time (NTP 70 years ahead of unix)
+	
 		return unixtime
 
 

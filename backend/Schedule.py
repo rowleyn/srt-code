@@ -7,6 +7,7 @@ Date: August 2018
 
 from astropy.coordinates import SkyCoord, EarthLocation, AltAz
 from astropy.time import Time
+from astropy import units as u
 import sqlite3
 import re
 import datetime
@@ -83,7 +84,7 @@ class Schedule:
 
 			print('checking for space after block ' + str(i))
 
-			while starttime >= self.schedule[i].endtime + 300 and endtime <= self.schedule[i+1].starttime - 300:		# loops through five-minute steps of the time between two blocks (padded by five minutes on either side)
+			while starttime >= self.schedule[i].endtime + 300 and endtime <= self.schedule[i+1].starttime - 300:	# loops through five-minute steps of the time between two blocks (padded by five minutes on either side)
 
 				print('there is space, checking for validity')
 
@@ -101,9 +102,9 @@ class Schedule:
 
 					status == result
 
-					newblock = Block(scanid, starttime, endtime)
+					newblock = Schedule.Block(scanid, starttime, endtime)
 					
-					startime = re.split('\.|\s', Time(starttime, scale='utc', format='unix').iso)[1]
+					starttime = re.split('\.|\s', Time(starttime, scale='utc', format='unix').iso)[1]
 					endtime = re.split('\.|\s', Time(endtime, scale='utc', format='unix').iso)[1]
 
 					cur.execute("INSERT INTO SCHEDULE VALUES (?,?,?)", (scanid, starttime, endtime))	# update the schedule and scan status in the db
@@ -115,7 +116,7 @@ class Schedule:
 
 					return status
 
-				startime += 60			# if scan is not valid within the time frame, adjust the frame a minute forward
+				starttime += 60			# if scan is not valid within the time frame, adjust the frame a minute forward
 				endtime += 60
 
 			starttime = self.schedule[i+1].endtime + 300	# update starttime to after the next Block
@@ -199,18 +200,28 @@ class Schedule:
 
 		azbounds = (configdata['azlower'], configdata['azupper'])		# repackage movement bounds
 		albounds = (configdata['allower'], configdata['alupper'])
+		
+		startaz = float(startpos.az.to_string(unit=u.deg, decimal=True))
+		startal = float(startpos.alt.to_string(unit=u.deg, decimal=True))
+		
+		if scantype == 'track':
+			
+			middleaz = float(middlepos.az.to_string(unit=u.deg, decimal=True))
+			middleal = float(middlepos.alt.to_string(unit=u.deg, decimal=True))
+			endaz = float(endpos.az.to_string(unit=u.deg, decimal=True))
+			endal = float(endpos.alt.to_string(unit=u.deg, decimal=True))
 
 		valid = True 													# check that the scan stays within telscope movement bounds
 
-		valid = valid and startpos.az >= azbounds[0] and startpos.az <= azbounds[1]
-		valid = valid and startpos.al >= albounds[0] and startpos.al <= albounds[1]
+		valid = valid and startaz >= azbounds[0] and startaz <= azbounds[1]
+		valid = valid and startal >= albounds[0] and startal <= albounds[1]
 
 		if scantype == 'track':
 
-			valid = valid and middlepos.az >= azbounds[0] and middlepos.az <= azbounds[1]
-			valid = valid and middlepos.al >= albounds[0] and middlepos.al <= albounds[1]
-			valid = valid and endpos.az >= azbounds[0] and endpos.az <= azbounds[1]
-			valid = valid and endpos.al >= albounds[0] and endpos.al <= albounds[1]
+			valid = valid and middleaz >= azbounds[0] and middleaz <= azbounds[1]
+			valid = valid and middleal >= albounds[0] and middleal <= albounds[1]
+			valid = valid and endaz >= azbounds[0] and endaz <= azbounds[1]
+			valid = valid and endal >= albounds[0] and endal <= albounds[1]
 
 		if not valid:
 
@@ -224,7 +235,7 @@ def getcurrenttime():
 
 	c = ntplib.NTPClient()								# initialize ntplib client
 	ntptime = c.request(NTP_SERVER, version = 4)		# get current time from Carleton's NTP server
-	unixtime = ntptime.tx_time							# convert ntp time to unix time
+	unixtime = ntptime.tx_time - 2207520000				# convert ntp time to unix time (NTP 70 years ahead of unix)
 
 	print('got time: ' + str(unixtime))
 
@@ -249,10 +260,11 @@ def main():
 
 	schedule = Schedule(dusk, dawn)
 
-	# cur.execute("INSERT INTO SOURCES VALUES (?,?,?)", ('polaris', '2h31m49s', '89d15m50s'))
-	# cur.execute("INSERT INTO SCANIDS VALUES (?,?,?)", (-20, 'scheduletest', 'submitted'))
-	# cur.execute("INSERT INTO SCANPARAMS VALUES (?,?,?,?,?,?,?,?,?)", (-20, 'track', 'polaris', '2h31m49s', '89d15m50s', '0h0m30s', 1500, 1510, 10))
-	# srtdb.commit()
+	cur.execute("UPDATE CONFIG SET LAT = ?, LON = ?", (44.45, -93.16))
+	cur.execute("INSERT INTO SOURCES VALUES (?,?,?)", ('polaris', '2h31m49s', '89d15m50s'))
+	cur.execute("INSERT INTO SCANIDS VALUES (?,?,?)", (-20, 'scheduletest', 'submitted'))
+	cur.execute("INSERT INTO SCANPARAMS VALUES (?,?,?,?,?,?,?,?,?)", (-20, 'track', 'polaris', '2h31m49s', '89d15m50s', '0h30m0s', 1500, 1510, 10))
+	srtdb.commit()
 
 	schedule.schedulescan(-20, getcurrenttime())
 
