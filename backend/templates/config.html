@@ -42,6 +42,15 @@
 <!-- Script block that will be pasted into the page. Will automatically retrieve the script from the server. -->
 <div id="script">
 
+	{% if admin %}
+	<script>
+		var admin = true;
+	</script>
+	{% else %}
+	<script>
+		var admin = true;
+	</script>
+	{% endif %}
 	<script id="replace">
 		var url = "/static/config.js";
 		$.getScript( url );
@@ -75,15 +84,26 @@
 
 				<tbody>
 					<tr>
+						{% if admin %}
 						<td><input type="text" name="name" id="name"></td>
 						<td><input type="text" name="lat" id="lat"></td>
 						<td><input type="text" name="lon" id="lon"></td>
 						<td><input type="text" name="height" id="height"></td>
+						{% else %}
+						<td><input type="text" name="name" id="name" disabled></td>
+						<td><input type="text" name="lat" id="lat" disabled></td>
+						<td><input type="text" name="lon" id="lon" disabled></td>
+						<td><input type="text" name="height" id="height" disabled></td>
+						{% endif %}
 					</tr>
 				</tbody>
 			</table>
-
+			
+			{% if admin %}
 			<button class="update">Update</button>
+			{% else %}
+			<button class="update" disabled>Update</button>
+			{% endif %}
 
 		</div>
 
@@ -104,16 +124,27 @@
 
 				<tbody>
 					<tr>
+						{% if admin %}
 						<td><input type="text" name="azlower" id="azlower"></td>
 						<td><input type="text" name="azupper" id="azupper"></td>
 						<td><input type="text" name="allower" id="allower"></td>
 						<td><input type="text" name="alupper" id="alupper"></td>
+						{% else %}
+						<td><input type="text" name="azlower" id="azlower" disabled></td>
+						<td><input type="text" name="azupper" id="azupper" disabled></td>
+						<td><input type="text" name="allower" id="allower" disabled></td>
+						<td><input type="text" name="alupper" id="alupper" disabled></td>
+						{% endif %}
 					</tr>
 				</tbody>
 			</table>
 
+			{% if admin %}
 			<button class="update">Update</button>
-
+			{% else %}
+			<button class="update" disabled>Update</button>
+			{% endif %}
+			
 		</div>
 
 		<h3>Frequency Limits</h3>
@@ -131,13 +162,22 @@
 
 				<tbody>
 					<tr>
+						{% if admin %}
 						<td><input type="text" name="freqlower" id="freqlower"></td>
 						<td><input type="text" name="frequpper" id="frequpper"></td>
+						{% else %}
+						<td><input type="text" name="freqlower" id="freqlower" disabled></td>
+						<td><input type="text" name="frequpper" id="frequpper" disabled></td>
+						{% endif %}
 					</tr>
 				</tbody>
 			</table>
 
+			{% if admin %}
 			<button class="update">Update</button>
+			{% else %}
+			<button class="update" disabled>Update</button>
+			{% endif %}
 
 		</div>
 
@@ -164,7 +204,11 @@
 				</tbody>
 			</table>
 
+			{% if admin %}
 			<button id="addsource">New source</button>
+			{% else %}
+			<button id="addsource">New source</button>
+			{% endif %}
 
 		</div>
 
@@ -177,6 +221,7 @@
 
 		<form>
 
+			{% if admin %}
 			<p><label for="name">Name</label>
 			<input type="text" name="name" id="name" placeholder="max 30 characters"></p>
 
@@ -185,6 +230,16 @@
 
 			<p><label for="dec">Dec</label>
 			<input type="text" name="dec" id="dec" placeholder="#d#m#s"></p>
+			{% else %}
+			<p><label for="name">Name</label>
+			<input type="text" name="name" id="name" placeholder="max 30 characters" disabled></p>
+
+			<p><label for="ras">RA</label>
+			<input type="text" name="ras" id="ras" placeholder="#h#m#s" disabled></p>
+
+			<p><label for="dec">Dec</label>
+			<input type="text" name="dec" id="dec" placeholder="#d#m#s" disabled></p>
+			{% endif %}
 
 		</form>
 
