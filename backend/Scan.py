@@ -271,7 +271,7 @@ class Scan:
 			cur.execute("INSERT INTO SCANRESULTS (?,?)", (nextscan['id'], b.getvalue()))	# store scan name, date, type, and data in the db
 			srtdb.commit()
 
-		cur.execute("UPDATE SCANID SET STATUS = ?", (scandata[1],))
+		cur.execute("UPDATE SCANIDS SET STATUS = ? WHERE ID = ?", (scandata[1], nextscan['id']))
 		cur.execute("INSERT INTO SCANHISTORY (?,?,?,?,?,?)", (nextscan['id'], nextscan['name'], nextscan['type'], d.day, d.month, d.year))
 		srtdb.commit()
 

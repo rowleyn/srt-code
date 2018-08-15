@@ -174,7 +174,7 @@ def submit_scan():
 
 			scanid = random.randint(1,1000000000000)
 
-			existingid = cur.execute("SELECT * FROM SCANIDS WHERE ID = ? LIMIT 1", (scanid,)).fetchone()
+			existingid = cur.execute("SELECT * FROM SCANIDS WHERE ID = ?", (scanid,)).fetchone()
 
 			if existingid == None:
 
@@ -253,7 +253,7 @@ def deschedule_scan():
 
 	if valid:
 
-		cur.execute("UPDATE SCANIDS WHERE ID = ? SET STATUS = ?", (scanid, 'cancelled'))	# set scan status to cancelled
+		cur.execute("UPDATE SCANIDS SET STATUS = ? WHERE ID = ?", ('cancelled', scanid))	# set scan status to cancelled
 		srtdb.commit()
 
 	srtdb.close()	# database connection no longer needed

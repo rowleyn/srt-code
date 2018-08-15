@@ -31,7 +31,7 @@ def main():
 
 	telescope = Scan.Scan()			# initialize a Scan object for running scans
 
-	config = cur.execute("SELECT * FROM CONFIG LIMIT 1").fetchone()		# fetch config data from the db
+	config = cur.execute("SELECT * FROM CONFIG").fetchone()		# fetch config data from the db
 
 	a = Astral()					# initalize an Astral object for computer day and night times
 
@@ -76,7 +76,7 @@ def main():
 
 		### create new schedules if current schedules are completed ###
 
-		config = cur.execute("SELECT * FROM CONFIG LIMIT 1").fetchone()		# get config data from the db
+		config = cur.execute("SELECT * FROM CONFIG").fetchone()		# get config data from the db
 
 		newday = datetime.date.today()										# get today's date
 
@@ -133,7 +133,7 @@ def main():
 
 				status = nightschedule.schedulescan(scanparams['id'], curtime)
 
-			cur.execute("UPDATE SCANIDS WHERE ID = ? SET STATUS = ?", (newscan['id'], status))
+			cur.execute("UPDATE SCANIDS SET STATUS = ? WHERE ID = ?", (status, newscan['id']))
 			srtdb.commit()
 
 
@@ -228,14 +228,14 @@ def runscan(schedule):
 					params = cur.execute("SELECT * FROM SCANPARAMS WHERE ID = ?", (block.scanid,))
 
 					cur.execute("INSERT INTO SCANHISTORY VALUES (?,?,?,?,?,?)", (block.scanid, params['name'], params['type'], today.day, today.month, today.year))
-					cur.execute("UPDATE SCANIDS WHERE ID = ? SET STATUS = ?", (block.scanid, 'timeout'))
+					cur.execute("UPDATE SCANIDS SET STATUS = ? WHERE ID = ?", ('timeout', block.scanid))
 					srtdb.commit()
 
 				else:
 
 					print('spawning thread to run next scan')
 
-					cur.execute("UPDATE SCANIDS WHERE ID = ? SET STATUS = ?", (block.scanid, 'running'))	# set scan status to running
+					cur.execute("UPDATE SCANIDS SET STATUS = ? WHERE ID = ?", ('running', block.scanid))	# set scan status to running
 					srtdb.commit()
 
 					nextscan = cur.execute("SELECT * FROM SCANPARAMS WHERE ID = ?", (block.scanid,))		# get scan params for the db

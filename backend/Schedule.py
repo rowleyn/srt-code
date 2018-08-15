@@ -9,6 +9,9 @@ from astropy.coordinates import SkyCoord, EarthLocation, AltAz
 from astropy.time import Time
 import sqlite3
 import re
+import datetime
+import ntplib
+from astral import Astral
 
 
 class Schedule:
@@ -68,19 +71,25 @@ class Schedule:
 
 		endtime = starttime + seconds
 
-		pos = (scanparams['ras'], scanparams['dec'])
-
 		scantype = scanparams['type']
+
+		print(str(starttime) + ' ' + str(endtime) + ' ' + scanparams['ras'] + ' ' + scanparams['dec'] + ' ' + scantype)
 
 		status = 'durationerror'
 
 		print('attempting to schedule a scan')
 
-		for i in range(len(self.schedule) - 2):							# loops through the spaces between each Block in the schedule
+		for i in range(len(self.schedule) - 1):							# loops through the spaces between each Block in the schedule
+
+			print('checking for space after block ' + str(i))
 
 			while starttime >= self.schedule[i].endtime + 300 and endtime <= self.schedule[i+1].starttime - 300:		# loops through five-minute steps of the time between two blocks (padded by five minutes on either side)
 
-				result = checkscan(pos, scantype, starttime, endtime)			# check to see if the scan is valid within a particular time window
+				print('there is space, checking for validity')
+
+				result = Schedule.checkscan(scanparams['ras'], scanparams['dec'], scantype, starttime, endtime)		# check to see if the scan is valid within a particular time window
+
+				print(result)
 
 				if status == 'durationerror' or status == 'positionerror':		# error hierarchy is movebounds > poisition > duration
 
@@ -88,7 +97,7 @@ class Schedule:
 
 				if result == 'scheduled':		# if the scan is valid, create a new Block for the scan and insert it into the schedule
 
-					print('found a spot!')
+					print('found a valid spot!')
 
 					status == result
 
@@ -143,24 +152,25 @@ class Schedule:
 	# Helper method for checking the validity of a scan.
 	# Checks that the scan's position is in the sky and that the scan does not go out of movement bounds.
 	#
-	# :param pos: a tuple containing the RA/dec position of the scan
+	# :param ras: right ascension of the scan to be checked
+	# :param dec: declination of the scan to be checked
 	# :param scantype: a string designating the type of scan
 	# :param starttime: start time of the scan in unix time
 	# :param endtime: end time of the scan in unix time
 	# :return: a string indicating the status of the scan
-	def checkscan(pos, scantype, starttime, endtime):
+	def checkscan(ras, dec, scantype, starttime, endtime):
 
 		srtdb = sqlite3.connect('srtdata.db')	# establish a connection and cursor into the database
 		srtdb.row_factory = sqlite3.Row
 		cur = srtdb.cursor()
 
-		configdata = cur.execute("SELECT * FROM CONFIG").fetchone()						# retrieve config data from the database
+		configdata = cur.execute("SELECT * FROM CONFIG").fetchone()		# retrieve config data from the database
 
-		position = SkyCoord(pos[0], pos[1], frame = 'icrs')								# convert position into astropy SkyCoord object for coord transformation
+		position = SkyCoord(ras, dec, frame = 'icrs')					# convert position into astropy SkyCoord object for coord transformation
 
 		location = EarthLocation(lat = configdata['lat'], lon = configdata['lon'], height = configdata['height']) 	# convert location into astropy EarthLocation
 
-		srtdb.close()														# database connection no longer needed
+		srtdb.close()
 
 		middletime = (starttime + endtime) / 2
 
@@ -170,7 +180,7 @@ class Schedule:
 		if scantype == 'track':
 
 			middletime = Time(middletime, format = 'unix')						# necessary to check a midpoint for altitude bounds due to circumpolar positions possibly dipping too low
-			middeframe = AltAz(location = location, obstime = middletime)
+			middleframe = AltAz(location = location, obstime = middletime)
 			endtime = Time(endtime, format = 'unix')
 			endframe = AltAz(location = location, obstime = endtime)
 
@@ -207,3 +217,47 @@ class Schedule:
 			return 'moveboundserror'
 
 		return 'scheduled'
+
+def getcurrenttime():
+
+	NTP_SERVER = 'ntp.carleton.edu'
+
+	c = ntplib.NTPClient()								# initialize ntplib client
+	ntptime = c.request(NTP_SERVER, version = 4)		# get current time from Carleton's NTP server
+	unixtime = ntptime.tx_time							# convert ntp time to unix time
+
+	print('got time: ' + str(unixtime))
+
+	return unixtime
+
+def main():
+
+	srtdb = sqlite3.connect('srtdata.db')		# establish a connection and cursor into the database
+	srtdb.row_factory = sqlite3.Row
+	cur = srtdb.cursor()
+
+	config = cur.execute("SELECT * FROM CONFIG").fetchone()
+
+	a = Astral()
+
+	today = datetime.date.today()
+
+	nighttimes = a.night_utc(today, config['lat'], config['lon'])
+
+	dusk = Time(nighttimes[0], format = 'datetime', scale = 'utc').unix
+	dawn = Time(nighttimes[1], format = 'datetime', scale = 'utc').unix
+
+	schedule = Schedule(dusk, dawn)
+
+	# cur.execute("INSERT INTO SOURCES VALUES (?,?,?)", ('polaris', '2h31m49s', '89d15m50s'))
+	# cur.execute("INSERT INTO SCANIDS VALUES (?,?,?)", (-20, 'scheduletest', 'submitted'))
+	# cur.execute("INSERT INTO SCANPARAMS VALUES (?,?,?,?,?,?,?,?,?)", (-20, 'track', 'polaris', '2h31m49s', '89d15m50s', '0h0m30s', 1500, 1510, 10))
+	# srtdb.commit()
+
+	schedule.schedulescan(-20, getcurrenttime())
+
+	for block in schedule.schedule:
+
+		print(str(block.scanid) + ' ' + str(block.starttime) + ' ' + str(block.endtime))
+
+main()
