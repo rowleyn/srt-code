@@ -191,42 +191,6 @@ class CommandStation:
 		return successful
 
 	
-	# Method that takes a source from the config sources list and moves the station to the position of that source.
-	#
-	# :param sourcename: name of source as labelled in the SOURCES table in srtdata.db
-	# :return:
-	def movebysource(self, sourcename):
-
-		### get current station information ###
-
-		srtdb = sqlite3.connect('srtdata.db')	# establish a connection and cursor into the database
-		srtdb.row_factory = sqlite3.Row
-		cur = srtdb.cursor()
-
-		configdata = cur.execute("SELECT * FROM CONFIG").fetchone()							# retrieve config data from the database
-		sourcedata = cur.execute("SELECT * FROM SOURCES WHERE NAME = ?", (sourcename,))		# retrieve source data from the database
-
-		source = SkyCoord(sourcedata['ras'],sourcedata['dec'],frame = 'icrs')				# convert source into astropy SkyCoord object for coord transformation
-
-		location = EarthLocation(lat = configdata['lat'], lon = configdata['lon'], height = configdata['height']) 	# convert location into astropy EarthLocation
-
-		srtdb.close()													# database connection no longer needed
-
-		c = ntplib.NTPClient()
-		ntptime = c.request('ntp.carleton.edu',version = 4)				# get current time from Carleton's NTP server
-		unixtime = ntptime.tx_time - 18000								# convert ntp time to unix time
-
-		observingtime = Time(unixtime,format = 'unix')					# create astropy Time object using converted ntp time
-
-		azalt = AltAz(location = location, obstime = observingtime)		# create AltAz reference frame
-
-		source = source.transform_to(azalt)								# transform source from ras/dec coords to az/alt coords
-
-		### command station with az/alt coords ###
-
-		self.movebyazal(source.az,source.alt)
-
-	
 	# Method that commands the station to take a single power reading at a single frequency.
 	#
 	# :para freq: frequency at which to takea reading
