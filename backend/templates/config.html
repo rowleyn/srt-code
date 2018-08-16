@@ -48,7 +48,7 @@
 	</script>
 	{% else %}
 	<script>
-		var admin = true;
+		var admin = false;
 	</script>
 	{% endif %}
 	<script id="replace">
@@ -207,7 +207,7 @@
 			{% if admin %}
 			<button id="addsource">New source</button>
 			{% else %}
-			<button id="addsource">New source</button>
+			<button id="addsource" disabled>New source</button>
 			{% endif %}
 
 		</div>
@@ -215,7 +215,7 @@
 	</div>
 
 	<!-- Jquery UI dialog form for adding new sources. -->
-	<div id="dialog-form" title="New source">
+	<div id="dialog-sourceform" title="New source">
 
 		<p class="validateTips">All fields are mandatory.</p>
 

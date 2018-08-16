@@ -33,6 +33,9 @@ current_users = 0
 # url for logging in, all urls redirect to this one if a user is not logged in
 @app.route('/login', methods=['GET','POST'])
 def login():
+	
+	global max_users
+	global current_users
 
 	if request.method == 'GET':
 
@@ -49,6 +52,8 @@ def login():
 					session['username'] = admin_username
 
 					current_users = current_users + 1
+					
+					print(current_users)
 
 					return redirect(url_for('main_page'))
 
@@ -65,6 +70,8 @@ def login():
 					session['username'] = normal_username
 
 					current_users = current_users + 1
+					
+					print(current_users)
 
 					return redirect(url_for('main_page'))
 
@@ -77,62 +84,68 @@ def login():
 # url for logging out, 
 @app.route('/logout')
 def logout():
+	
+	global current_users
 
-	session.pop('username', None)
-
-	current_users = current_users - 1
-
-	return 'logged out'
+	if 'username' in session:
+		
+		session.pop('username', None)
+	
+		current_users = current_users - 1
+		
+		print(current_users)
+	
+		return 'logged out'
 
 # default url
 @app.route('/')
 def main_page():
 	
-	if session[username] != None:
+	if 'username' in session:
 
 		return render_template('srt.html')
 		
-	return redirect(url_for(login))
+	return redirect(url_for('login'))
 
 # url for the home page, activated when a user clicks on the home tab
 @app.route('/home')
 def home_page():
-	
-	if session[username] != None:
+
+	if 'username' in session:
 
 		return render_template('home.html')
 		
-	return redirect(url_for(login))
+	return redirect(url_for('login'))
 
 # url for the config page, activated when a user clicks on the config tab
 @app.route('/config')
 def config_page():
 	
-	if session[username] == admin_username:
+	if 'username' in session and session['username'] == admin_username:
 
 		return render_template('config.html', admin=True)
 		
-	if session[username] == normal_username:
+	if 'username' in session and session['username'] == normal_username:
 		
 		return render_template('config.html')
 		
-	return redirect(url_for(login))
+	return redirect(url_for('login'))
 
 # url for the config page, activated when a user clicks on the scan tab
 @app.route('/scan')
 def scan_page():
 	
-	if session[username] != None:
+	if 'username' in session:
 
 		return render_template('scan.html')
 		
-	return redirect(url_for(login))
+	return redirect(url_for('login'))
 
 # url for the status bar, activated periodically via automatic ajax calls on every page
 @app.route('/status', methods=['POST'])
 def get_status():
 	
-	if session[username] != None:
+	if 'username' in session:
 
 		srtdb = sqlite3.connect('srtdata.db')	# establish a connection and cursor into the database
 		srtdb.row_factory = sqlite3.Row
@@ -165,16 +178,16 @@ def get_status():
 	
 		return response
 		
-	return redirect(url_for(login))
+	return redirect(url_for('login'))
 
 # url for submitting a new scan, returns the schedule of scans
 @app.route('/submitscan', methods=['POST'])
 def submit_scan():
 	
-	if session[username] != None:
+	if 'username' in session:
 
 		newscan = request.get_json(force=True)	# get json-formatted scan parameters
-	
+		
 		srtdb = sqlite3.connect('srtdata.db')	# establish a connection and a cursor into the database
 		srtdb.row_factory = sqlite3.Row
 		cur = srtdb.cursor()
@@ -257,23 +270,23 @@ def submit_scan():
 	
 		return scheduleGetter()
 		
-	return redirect(url_for(login))
+	return redirect(url_for('login'))
 
 # url for updating the list of scheduled scans, activated periodically via automatic ajax calls by the scan page
 @app.route('/schedule', methods=['GET','POST'])
 def get_schedule():
 	
-	if session[username] != None:
+	if 'username' in session:
 
 		return scheduleGetter()
 		
-	return redirect(url_for(login))
+	return redirect(url_for('login'))
 
 # url for cancelling a scan, returns the schedule of scans
 @app.route('/deschedulescan', methods=['POST'])
 def deschedule_scan():
 	
-	if session[username] != None:
+	if 'username' in session:
 
 		scanid = int(request.get_data()) 		# get id of scan to be removed
 	
@@ -294,23 +307,23 @@ def deschedule_scan():
 	
 		return scheduleGetter()
 		
-	return redirect(url_for(login))
+	return redirect(url_for('login'))
 
 # url for updating the list of sources in the scan page dialog form
 @app.route('/sources', methods=['POST'])
 def get_sources():
 	
-	if session[username] != None:
+	if 'username' in session:
 
 		return sourceGetter()
 		
-	return redirect(url_for(login))
+	return redirect(url_for('login'))
 
 # url for uploading a new source or updating an existing source, returns the newly updated source list
 @app.route('/uploadsource', methods=['POST'])
 def add_source():
 	
-	if session[username] == admin_username:
+	if 'username' in session and session['username'] == admin_username:
 
 		newsource = request.get_json(force=True)	# get json-formatted source parameters
 	
@@ -342,17 +355,17 @@ def add_source():
 	
 		return sourceGetter()
 		
-	if session[username] == normal_username:
+	if 'username' in session and session['username'] == normal_username:
 		
 		return sourceGetter()
 		
-	return redirect(url_for(login))
+	return redirect(url_for('login'))
 
 # url for removing a source from the database, returns the newly updated source list
 @app.route('/removesource', methods=['POST'])
 def remove_source():
 	
-	if session[username] == admin_username:
+	if 'username' in session and session['username'] == admin_username:
 
 		sourcename = request.get_data().decode('ascii') 	# get name of source to be removed
 	
@@ -373,17 +386,17 @@ def remove_source():
 	
 		return sourceGetter()
 		
-	if session[username] == normal_username:
+	if 'username' in session and session['username'] == normal_username:
 		
 		return sourceGetter()
 		
-	return redirect(url_for(login))
+	return redirect(url_for('login'))
 
 # url for updating the configuration parameters, returns the newly updated parameters
 @app.route('/updateconfig', methods=['POST'])
 def update_config():
 	
-	if session[username] == admin_username:
+	if 'username' in session and session['username'] == admin_username:
 
 		newconfig = request.get_json()	# get json-formatted source parameters
 	
@@ -447,29 +460,29 @@ def update_config():
 	
 		return configGetter(newconfig[0])
 		
-	if session[username] == normal_username:
+	if 'username' in session and session['username'] == normal_username:
 		
 		newconfig = request.get_json()
 		
 		return configGetter(newconfig[0])
 		
-	return redirect(url_for(login))
+	return redirect(url_for('login'))
 
 # url for getting config data to populate tables on the config page
 @app.route('/getconfig', methods=['POST'])
 def get_config():
 	
-	if session[username] != None:
+	if 'username' in session:
 
 		return configGetter(request.get_data().decode('ascii'))
 		
-	return redirect(url_for(login))
+	return redirect(url_for('login'))
 
 # url for downloading a set of scans as a zip file
 @app.route('/downloadscans', methods=['POST'])
 def download_scans():
 	
-	if session[username] != None:
+	if 'username' in session:
 
 		idlist = request.get_json(force=True)		# get json-formatted list of scan names
 	
@@ -510,13 +523,13 @@ def download_scans():
 	
 		return response
 		
-	return redirect(url_for(login))
+	return redirect(url_for('login'))
 
 # url for searching completed scans by name and date range
 @app.route('/searchscans', methods=['POST'])
 def search_scans():
 	
-	if session[username] != None:
+	if 'username' in session:
 
 		searchparams = request.get_json(force=True)		# get json-formatted list of search params
 	
@@ -578,13 +591,13 @@ def search_scans():
 	
 		return response
 		
-	return redirect(url_for(login))
+	return redirect(url_for('login'))
 
 
 @app.route('/deletescans', methods=['POST'])
 def delete_scan():
 	
-	if session[username] == admin_username:
+	if 'username' in session and session['username'] == admin_username:
 
 		scanids = request.get_json()				# get json-formatted list of scan names
 	
@@ -605,17 +618,17 @@ def delete_scan():
 	
 		return 'completed'
 		
-	if session[username] == normal_username:
+	if 'username' in session and session['username'] == normal_username:
 		
 		return 'notadmin'
 		
-	return redirect(url_for(login))
+	return redirect(url_for('login'))
 
 
 @app.route('/scanstatus', methods=['GET','POST'])
 def get_scanstatus():
 	
-	if session[username] != None:
+	if 'username' in session:
 
 		srtdb = sqlite3.connect('srtdata.db')		# establish a connection and cursor into the database
 		srtdb.row_factory = sqlite3.Row
@@ -631,7 +644,7 @@ def get_scanstatus():
 	
 			if valid:
 	
-				currentstatus = cur.execute("SELECT * FROM STATUS LIMIT 1").fetchone()
+				currentstatus = cur.execute("SELECT * FROM STATUS").fetchone()
 	
 				if currentstatus['id'] == newstatus['id'] and currentstatus['code'] != 'ok':
 	
@@ -648,13 +661,13 @@ def get_scanstatus():
 	
 		return response
 		
-	return redirect(url_for(login))
+	return redirect(url_for('login'))
 
 
 @app.route('/gethistory', methods=['POST'])
 def get_history():
 	
-	if session[username] != None:
+	if 'username' in session:
 
 		srtdb = sqlite3.connect('srtdata.db')		# establish a connection and cursor into the database
 		srtdb.row_factory = sqlite3.Row
@@ -693,7 +706,7 @@ def get_history():
 	
 		return response
 		
-	return redirect(url_for(login))
+	return redirect(url_for('login'))
 
 
 
@@ -718,13 +731,15 @@ def scheduleGetter():
 
 	for block in schedule:
 
-		scan = cur.execute("SELECT * FROM SCANPARAMS WHERE ID = ?", (block['id'],))		# get scan params from the db
+		scanparams = cur.execute("SELECT * FROM SCANPARAMS WHERE ID = ?", (block['id'],)).fetchone()		# get scan params from the db
+		scanstatus = cur.execute("SELECT * FROM SCANIDS WHERE ID = ?", (block['id'],)).fetchone()
+		
+		scan = {'id': block['id'], 'name': scanstatus['name'], 'type': scanparams['type'], 'source': scanparams['source'], 'ras': scanparams['ras'],
+					'dec': scanstatus['dec'], 'freqlower': scanparams['freqlower'], 'frequpper': scanparams['frequpper']}
 
 		if not firstchecked:
 
-			firstscan = cur.execute("SELECT * FROM SCANID WHERE ID = ?", (block['id'],)).fetchone()		# first scan in the schedule must be checked for running status
-
-			if firstscan['status'] == 'running':	# if it is running mark 'current' field as True
+			if scanstatus['status'] == 'running':	# if it is running mark 'current' field as True
 
 				scan['current'] = True
 

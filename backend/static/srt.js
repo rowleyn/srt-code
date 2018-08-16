@@ -71,14 +71,13 @@ $(function() {
 		closeOnEscape: false,
 		buttons: {
 
-			"Resume scan": function() {
+			"Resume": function() {
 
 				$.post( "/scanstatus", JSON.stringify( currentstatus ), function( response ) {}, "json");
 
 				intervalid = setInterval( getscanstatus, 10000 );
 				warning.dialog( "close" );
-			},
-			"Cancel scan": function() {}
+			}
 		},
 		classes: {
 
@@ -106,49 +105,8 @@ $(function() {
 
 				if (currentstatus["code"] === "timeout") {
 
-					warning.html("<p>The telescope timed out during movement. It may be blocked or damaged.</p><p>Please check the telescope before continuing.</p>");
-
-					warning.dialog( "option", "buttons", 
-						[{
-							text: "Cancel scan",
-							click: function() {
-
-								$.post( "/scanstatus", JSON.stringify( currentstatus ), function( response ) {}, "json");
-
-								$.post( "/dequeuescan", currentstatus["id"], function( response ) {});
-
-								interval_id = setInterval( getscanstatus, 10000 );
-								warning.dialog( "close" );
-							}
-						}]);
+					warning.html("<p>The telescope timed out during movement. It may be blocked or damaged.</p><p>Please check the telescope before resuming.</p>");
 				}
-				else {
-
-					if (currentstatus["code"] === "schedulefailed") {
-
-						warning.html("<p>The scan could not be added to the schedule.</p><p>Check the schedule to make sure there is a time slot large enough for the scan, and check that the path of the scan is valid.</p>");
-					}
-					else if (currentstatus["code"] === "invalidparam") {
-
-						warning.html("<p>One or more of the scan's parameters are invalid.</p><p>Please check that all entered parameters are valid.</p>");
-					}
-					else {
-
-						warning.html("<p>An unknown error occurred. Please retry the last action.</p><p>If the problem persists, please contact ___</p>");
-					};
-
-					warning.dialog( "option", "buttons",
-						[{
-							text: "Ok",
-							click: function() {
-
-								$.post( "/scanstatus", JSON.stringify( currentstatus ), function( response ) {}, "json");
-
-								interval_id = setInterval( getscanstatus, 10000 );
-								warning.dialog( "close" );
-							}
-						}]);
-				};
 
 				warning.dialog( "open" );
 			};

@@ -355,21 +355,12 @@ $( function() {
 			newentry.find( "#type" ).html( scheduledata[i]["type"] );
 			if ( scheduledata[i]["type"] === "track" ) {
 
-				if ( scheduledata[i]["source"] === "no source" ) {
+				if ( scheduledata[i]["source"] !== "no source" ) {
 
-					newentry.find( "#source-pos" ).find( "#ras" ).html( "RA: " + scheduledata[i]["ras"] );
-					newentry.find( "#source-pos" ).find( "#dec" ).html( "Dec: " + scheduledata[i]["dec"] );
+					newentry.find( "#source-pos #sourcename" ).html( "Source: " + scheduledata[i]["source"] );
 				}
-				else {
-
-					newentry.find( "#source-pos #sourcename" ).html( scheduledata[i]["source"] );
-				}
-			}
-			else {
-
-				newentry.find( "#source-pos" ).find( "#ras" ).html( "RA: " + scheduledata[i]["ras"] );
-				newentry.find( "#source-pos" ).find( "#dec" ).html( "Dec: " + scheduledata[i]["dec"] );
-			};
+			newentry.find( "#source-pos" ).find( "#ras" ).html( "RA: " + scheduledata[i]["ras"] );
+			newentry.find( "#source-pos" ).find( "#dec" ).html( "Dec: " + scheduledata[i]["dec"] );
 			newentry.find( "#times" ).find( "#start" ).html( "Start: " + scheduledata[i]["starttime"] );
 			newentry.find( "#times" ).find( "#end" ).html( "End: " + scheduledata[i]["endtime"] );
 			newentry.find( "#freqrange" ).find( "#freqlower" ).html( "Min freq: " + scheduledata[i]["freqlower"] );

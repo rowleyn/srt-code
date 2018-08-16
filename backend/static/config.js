@@ -1,15 +1,27 @@
 
-$( function() {
+$(function() {
 
 	// initial setup
 	var dialog, tips = $( ".validateTips" )
 
-	var sourcelistTemplate = 	`<tr class="entry">
-									<td id="name">Name</td>
-									<td id="ras">RA</td>
-									<td id="dec">Dec</td>
-									<td><span class="ui-icon ui-icon-circle-close close">Remove source</span></td>
-								</tr>`
+	if ( admin ) {
+		
+		var sourcelistTemplate = 	`<tr class="entry">
+										<td id="name">Name</td>
+										<td id="ras">RA</td>
+										<td id="dec">Dec</td>
+										<td><span class="ui-icon ui-icon-circle-close close">Remove source</span></td>
+									</tr>`
+	}
+	else {
+		
+		var sourcelistTemplate = 	`<tr class="entry">
+										<td id="name">Name</td>
+										<td id="ras">RA</td>
+										<td id="dec">Dec</td>
+										<td></td>
+									</tr>`
+	}
 
 	tips.hide();
 
@@ -43,21 +55,21 @@ $( function() {
 	$( "button" ).button();
 
 	// sets up jquery ui dialog form for adding sources
-	dialog = $( "#dialog-form" ).dialog({
+	dialog = $( "#dialog-sourceform" ).dialog({
 		autoOpen: false,
 		modal: true,
 		buttons: {
 			"Add source": addSource,
 			Cancel: function() {
 
-				$( "#dialog-form .validateTips" ).hide();
+				$( "#dialog-sourceform .validateTips" ).hide();
 				dialog.dialog( "close" );
 			}
 		},
 		close: function() {
 
-			$( "#dialog-form input[type=text], textarea").val("");
-			$( "#dialog-form input" ).removeClass( "ui-state-error" );
+			$( "#dialog-sourceform input[type=text], textarea").val("");
+			$( "#dialog-sourceform input" ).removeClass( "ui-state-error" );
 		}
 	});
 
@@ -100,7 +112,7 @@ $( function() {
 	*/
 	function addSource() {
 
-		$( "#dialog-form .validateTips" ).show();
+		$( "#dialog-sourceform .validateTips" ).show();
 
 		if ( validateSource() ) {
 
@@ -139,12 +151,15 @@ $( function() {
 		};
 
 		// set event listeners on the close icons of each row
-		$( ".close" ).on( "click", function() {
-
-			var sourcename = $( this ).closest( ".entry" ).find( "#name" ).html();
-
-			removeSource( sourcename );
-		});
+		if ( admin ) {
+			
+			$( ".close" ).on( "click", function() {
+	
+				var sourcename = $( this ).closest( ".entry" ).find( "#name" ).html();
+	
+				removeSource( sourcename );
+			});
+		}
 	}
 
 	/*
