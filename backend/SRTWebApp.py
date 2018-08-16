@@ -15,11 +15,12 @@ import io
 import os
 import re
 import random
-from datetime import date
+from datetime import date, timedelta
 
 app = Flask(__name__)
 
 app.secret_key = os.urandom(16)
+app.config['MAX_CONTENT_LENGTH'] = 4096
 
 admin_username = 'admin'
 admin_password = 'something'
@@ -30,56 +31,66 @@ normal_password = 'something'
 max_users = 10
 current_users = 0
 
+@app.before_request
+def before_request:
+	session.permanent = True
+	app.permanent_session_lifetime = timedelta(minutes=20)
+	session.modified = True
+
 # url for logging in, all urls redirect to this one if a user is not logged in
 @app.route('/login', methods=['GET','POST'])
 def login():
 	
 	global max_users
 	global current_users
+	
+	if 'username' not in session:
 
-	if request.method == 'GET':
-
-		return render_template('login.html')
-
-	else:
-
-		if request.form['username'] == admin_username:
-
-			if request.form['password'] == admin_password:
-
-				if current_users <= max_users:
-
-					session['username'] = admin_username
-
-					current_users = current_users + 1
-					
-					print(current_users)
-
-					return redirect(url_for('main_page'))
-
-				else:
-
-					return 'toomanyusers'
-
-		if request.form['username'] == normal_username:
-
-			if request.form['password'] == normal_password:
-
-				if current_users <= max_users:
-
-					session['username'] = normal_username
-
-					current_users = current_users + 1
-					
-					print(current_users)
-
-					return redirect(url_for('main_page'))
-
-				else:
-
-					return 'toomanyusers'
-
-		return 'failure'
+		if request.method == 'GET':
+	
+			return render_template('login.html')
+	
+		else:
+	
+			if request.form['username'] == admin_username:
+	
+				if request.form['password'] == admin_password:
+	
+					if current_users <= max_users:
+	
+						session['username'] = admin_username
+	
+						current_users = current_users + 1
+						
+						print(current_users)
+	
+						return redirect(url_for('main_page'))
+	
+					else:
+	
+						return 'toomanyusers'
+	
+			if request.form['username'] == normal_username:
+	
+				if request.form['password'] == normal_password:
+	
+					if current_users <= max_users:
+	
+						session['username'] = normal_username
+	
+						current_users = current_users + 1
+						
+						print(current_users)
+	
+						return redirect(url_for('main_page'))
+	
+					else:
+	
+						return 'toomanyusers'
+	
+			return 'failure'
+			
+	return redirect(url_for('main_page'))	
 
 # url for logging out, 
 @app.route('/logout')
@@ -735,7 +746,7 @@ def scheduleGetter():
 		scanstatus = cur.execute("SELECT * FROM SCANIDS WHERE ID = ?", (block['id'],)).fetchone()
 		
 		scan = {'id': block['id'], 'name': scanstatus['name'], 'type': scanparams['type'], 'source': scanparams['source'], 'ras': scanparams['ras'],
-					'dec': scanstatus['dec'], 'freqlower': scanparams['freqlower'], 'frequpper': scanparams['frequpper']}
+					'dec': scanparams['dec'], 'freqlower': scanparams['freqlower'], 'frequpper': scanparams['frequpper']}
 
 		if not firstchecked:
 
@@ -765,7 +776,7 @@ def scheduleGetter():
 	return response
 
 '''
-Function that gets source data from the databse and returns it as a Flask Response object containing json.
+Function that gets source data from the database and returns it as a Flask Response object containing json.
 
 :return response: Flask Response object with json-encoded source data
 '''

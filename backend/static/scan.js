@@ -349,7 +349,7 @@ $( function() {
 		// build a new table row from the template and scan params
 		for ( var i = 0; i < scheduledata.length; i++ ) {
 
-			var newentry =  scanlistTemplate;
+			var newentry = scanlistTemplate;
 			newentry = $( newentry );
 			newentry.find( "#name" ).html( scheduledata[i]["name"] );
 			newentry.find( "#type" ).html( scheduledata[i]["type"] );
@@ -359,6 +359,7 @@ $( function() {
 
 					newentry.find( "#source-pos #sourcename" ).html( "Source: " + scheduledata[i]["source"] );
 				}
+			}
 			newentry.find( "#source-pos" ).find( "#ras" ).html( "RA: " + scheduledata[i]["ras"] );
 			newentry.find( "#source-pos" ).find( "#dec" ).html( "Dec: " + scheduledata[i]["dec"] );
 			newentry.find( "#times" ).find( "#start" ).html( "Start: " + scheduledata[i]["starttime"] );
@@ -380,7 +381,10 @@ $( function() {
 
 						descheduleScan( scanid );
 					});
+				}
+				else {
 					
+					$( "#scheduled-scans tbody" ).append( newentry );
 				}
 
 				active_set = true;

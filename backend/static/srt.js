@@ -86,9 +86,11 @@ $(function() {
 		}
 	});
 
-	$( window ).on( "unload", function( e ) {
+	$( window ).on( "unload", function( event ) {
 
 		$.get( "/logout", "logging out", function( response ) {});
+		
+		event.returnValue = "logged out"
 	});
 
 	var currentstatus = {};
