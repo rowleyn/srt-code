@@ -89,7 +89,7 @@ srt.execute("INSERT INTO STATUS VALUES (?,?)", (-1,'ok'))
 # 		VALUES	(1234567890,0,0)")
 
 srt.execute("INSERT INTO CONFIG (NAME,LAT,LON,HEIGHT,AZ,AL,AZLOWER,AZUPPER,ALLOWER,ALUPPER,FREQLOWER,FREQUPPER) \
-		VALUES	('Carleton Small Radio Telescope', 0, 0, 0, 180, 90, 0, 360, 0, 180, 0, 10000 )")
+		VALUES	('Carleton Small Radio Telescope', 44.45, -93.16, 0, 180, 90, 0, 360, 0, 180, 0, 10000 )")
 
 # srt.execute("INSERT INTO QUEUE (ID,NAME,TYPE,SOURCE,RAS,DEC,DURATION,FREQLOWER,FREQUPPER,STEPNUM) \
 # 		VALUES	(1234567890, 'test1', 'track', 'crab', '0h0m0s', 0, '01h01m01s', 1400, 1440, 1000 )")

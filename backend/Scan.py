@@ -6,14 +6,18 @@ Author: Nathan Rowley
 Date: June 2018
 '''
 
-import CommandStation
+from CommandStation import CommandStation
 from astropy.coordinates import SkyCoord, EarthLocation, AltAz
 from astropy.time import Time
 from astropy.table import Table
+from astropy import units as u
+from numpy import linspace
 from datetime import date
 import io
+import re
 import ntplib
 import sqlite3
+import _thread
 
 
 NTP_SERVER = 'ntp.carleton.edu'		# NTP server for time retrieval. Change to suit your needs
@@ -22,7 +26,7 @@ class Scan:
 
 	def __init__(self):
 
-		self.station = CommandStation.CommandStation()
+		self.station = CommandStation()
 
 
 	# Method to take a single data point at a single frequency for a single source.
@@ -49,21 +53,21 @@ class Scan:
 	#
 	# :param azal: tuple containing azimuth and altitude of scan position
 	# :param flimit: tuple containing lower and upper frequency limits in MHz
-	# :param step: float containing frequency step quantity in MHz
+	# :param stepnum: number of steps to take over the frequency range
 	# :return data: dictionary containing a single spectrum with start and end times and a time correction value
-	def singlespectrum(azal, flimit, step):
+	def singlespectrum(self, azal, flimit, stepnum):
 
 		spectrum = []
 
-		starttime = getcurrenttime()			# get start time of spectrum scan
+		starttime = self.getcurrenttime()	# get start time of spectrum scan
 
 		spectrumsuccess = True
 
-		for freq in range(flimit[0], flimit[1], step):		# sweep through frequencies in range with step size step
+		for freq in linspace(flimit[0], flimit[1], stepnum):	# sweep through frequencies in range, taking stepnum steps
 
 			if spectrumsuccess:
 
-				scan = singlescan(azal, freq)		# do single scan at current frequency
+				scan = self.singlescan(azal, freq)		# do single scan at current frequency
 
 				if scan[1] == False:
 
@@ -75,7 +79,7 @@ class Scan:
 
 			spectrum.append(scan[0])	# append scan result to spectrum
 
-		endtime = getcurrenttime()		# get end time of spectrum scan
+		endtime = self.getcurrenttime()		# get end time of spectrum scan
 
 		data = {'spectrum': spectrum, 'starttime': starttime, 'endtime': endtime, 'spectrumsuccess': spectrumsuccess}		# package spectrum and time data
 
@@ -87,10 +91,10 @@ class Scan:
 	# :param scanid: the id of the current scan
 	# :param pos: tuple containing galactic latitude and longitude of the position to track
 	# :param flimit: tuple containing lower and upper frequency limits in MHz
-	# :param step: float containing frequency step quantity in MHz
+	# :param stepnum: number of steps to take over the frequency range
 	# :param time: unix time at which to stop scanning
 	# :return trackdata: tuple containing a list of scan data and a string indicating the status of the scan
-	def track(scanid, pos, flimit, step, time):
+	def track(self, scanid, pos, flimit, stepnum, time):
 
 		print('running a track scan')
 
@@ -98,11 +102,11 @@ class Scan:
 		srtdb.row_factory = sqlite3.Row
 		cur = srtdb.cursor()
 
-		curtime = getcurrenttime()		# get start time of scan
+		curtime = self.getcurrenttime()		# get start time of scan
 
 		trackdata = []
 
-		while curtime < time:						# continue scanning until current time is past the end time
+		while curtime < time:	# continue scanning until current time is past the end time
 
 			status = cur.execute("SELECT * FROM SCANIDS WHERE ID = ?", (scanid,)).fetchone()		# check current status to see if scan was cancelled
 
@@ -114,7 +118,7 @@ class Scan:
 
 				return (trackdata, 'cancelled')
 
-			azal = getazal(pos)						# get current azimuth and altitude of tracked position
+			azal = self.getazal(pos)		# get current azimuth and altitude of tracked position
 
 			if azal == 'positionerror' or azal == 'moveboundserror':	# check for invalid position or movement, return if found
 
@@ -122,9 +126,9 @@ class Scan:
 
 				return (trackdata, azal)
 
-			spectrumdata = singlespectrum(azal, flimit, step)		# take a spectrum measurement
+			spectrumdata = self.singlespectrum(azal, flimit, stepnum)	# take a spectrum measurement
 
-			trackdata.append(spectrumdata)							# append spectrum data to the scan
+			trackdata.append(spectrumdata)		# append spectrum data to the scan
 
 			if spectrumdata['spectrumsuccess'] == False:
 
@@ -132,9 +136,9 @@ class Scan:
 
 				srtdb.close()
 
-				return (tackdata, 'timeout')
+				return (trackdata, 'timeout')
 
-			curtime = getcurrenttime()			# update current time
+			curtime = self.getcurrenttime()		# update current time
 
 		print('scan complete')
 
@@ -148,22 +152,22 @@ class Scan:
 	# :param scanid: the id of the current scan
 	# :param pos: tuple containing galactic latitude and longitude of drift position
 	# :param flimit: tuple containing lower and upper frequency limits in MHz
-	# :param step: float containing frequency step quantity in MHz
+	# :param stepnum: number of steps to take over the frequency range
 	# :param time: unix time at which to stop scanning
 	# :return driftdata: tuple containing a list of scan data and a string indicating the status of the scan
-	def drift(scanid, pos, flimit, step, time):
+	def drift(self, scanid, pos, flimit, stepnum, time):
 
 		print('running a drift scan')
 
-		srtdb = sqlite3.connect('srtdata.db')			# establish a connection and cursor into the database
+		srtdb = sqlite3.connect('srtdata.db')		# establish a connection and cursor into the database
 		srtdb.row_factory = sqlite3.Row
 		cur = srtdb.cursor()
 
-		curtime = getcurrenttime()			# get start time of scan
+		curtime = self.getcurrenttime()		# get start time of scan
 
 		driftdata = []
 
-		azal = getazal(pos)			# get azimuth and altitude of the drift position
+		azal = self.getazal(pos)		# get azimuth and altitude of the drift position
 
 		if azal == 'positionerror' or azal == 'moveboundserror':	# check for invalid or movement, return 
 
@@ -171,7 +175,7 @@ class Scan:
 
 			return (driftdata, azal)
 
-		while curtime < time:							# continue scanning until the current time is past the end time
+		while curtime < time:		# continue scanning until the current time is past the end time
 
 			status = cur.execute("SELECT * FROM SCANID WHERE ID = ?", (scanid,)).fetchone()		# check current status to see if scan was cancelled
 
@@ -183,9 +187,9 @@ class Scan:
 
 				return (driftdata, 'cancelled')
 
-			spectrumdata = singlespectrum(azal, flimit, step)		# take a spectrum measurement
+			spectrumdata = self.singlespectrum(azal, flimit, stepnum)		# take a spectrum measurement
 
-			driftdata.append(spectrumdata)							# append spectrum data to the scan
+			driftdata.append(spectrumdata)		# append spectrum data to the scan
 
 			if spectrumdata['spectrumsuccess'] == False:
 
@@ -195,7 +199,7 @@ class Scan:
 
 				return (driftdata, 'timeout')
 
-			curtime = getcurrenttime()			# update current time
+			curtime = self.getcurrenttime()			# update current time
 
 		print('scan complete')
 
@@ -207,72 +211,75 @@ class Scan:
 	# Method that performs an entire scan and stores the collected data in the database.
 	#
 	# :param nextscan: a dict object containing the parameters of a scan
-	def donextscan(nextscan):
+	def donextscan(self, nextscan):
 
-		# srtdb = sqlite3.connect('srtdata.db')									# establish a connection and cursor into the database
-		# srtdb.row_factory = sqlite3.Row
-		# cur = srtdb.cursor()
+		srtdb = sqlite3.connect('srtdata.db')	# establish a connection and cursor into the database
+		srtdb.row_factory = sqlite3.Row
+		cur = srtdb.cursor()
 
-		# nextscan = cur.execute("SELECT * FROM QUEUE LIMIT 1").fetchone()		# retrieve next scan from queue
+		pos = (nextscan['ras'], nextscan['dec'])	# get position of scan
 
-		pos = (nextscan['ras'], nextscan['dec'])								# get position of scan
-
-		flower   = nextscan['freqlower']						# get spectrum parameters
+		flower   = nextscan['freqlower']			# get spectrum parameters
 		fupper	 = nextscan['frequpper']
 		stepnum  = nextscan['stepnum']
 
-		stepsize = (fupper - flower) / stepnum					# calculate step size from spectrum params
-
-		if stepsize < 0.04:										# if step size is below the minimum for the telescope, set to the min
-
-			stepsize = 0.04
-
-		duration = re.split('[hms]', nextscan['duration'])						# get duration values of scan
+		duration = re.split('[hms]', nextscan['duration'])		# get duration values of scan
 
 		seconds = int(duration[0]) * 60 * 60 + int(duration[1]) * 60 + int(duration[2])
 
-		curtime = getcurrenttime()
+		curtime = self.getcurrenttime()
 
-		endtime = curtime + seconds															# calculate the ending time of the scan in unix time
+		endtime = curtime + seconds		# calculate the ending time of the scan in unix time
 
 		cur.execute("UPDATE STATUS SET ID = ?, CODE = ?", (nextscan['id'], 'ok'))			# update the STATUS table
 		srtdb.commit()
 
 		if nextscan['type'] == 'track':
 
-			scandata = track(nextscan['id'], pos, (flower, fupper), stepsize, endtime)		# do a track scan
+			scandata = self.track(nextscan['id'], pos, (flower, fupper), stepnum, endtime)		# do a track scan
 
 		else:
 
-			scandata = drift(nextscan['id'], pos, (flower, fupper), stepsize, endtime)		# do a drift scan
+			scandata = self.drift(nextscan['id'], pos, (flower, fupper), stepnum, endtime)		# do a drift scan
 
 		if len(scandata[0]) != 0:
 
 			print('saving scan data')
 
-			starttime = Time(scandata[0]['starttime'], format = 'unix')							# package scan time info into astropy Time objects for format conversion
-			endtime = Time(scandata[len(scandata) - 1]['endtime'], format = 'unix')
+			starttime = Time(scandata[0][0]['starttime'], format = 'unix')					# package scan time info into astropy Time objects for format conversion
+			endtime = Time(scandata[0][len(scandata) - 1]['endtime'], format = 'unix')
 
-			nextscan['starttime'] = startime.iso 	# store start and end times with scan params in iso format
+			nextscan['starttime'] = starttime.iso 	# store start and end times with scan params in iso format
 			nextscan['endtime'] = endtime.iso
+			
+			tablerows = []
+			
+			for scan in scandata[0]:
+				
+				tablerows.append(scan['spectrum'])
 
-			t = Table(meta = nextscan);				# initialize astropy Table object to store scan data with scan params as table metadata
+			t = Table(rows = tablerows, meta = nextscan);		# initialize astropy Table object to store scan data with scan params as table metadata
 
-			for scan in scandata[0]:				# add scan data to the Table
+			# for scan in scandata[0]:		# add scan data to the Table
 
-				t.add_row(scan['spectrum'])
+				# t.add_row(scan['spectrum'])
 
-			b = io.BytesIO()						# initialize byte stream for FITS file writing
+			b = io.BytesIO()			# initialize byte stream for FITS file writing
 
-			t.write(b, format='fits')				# write the Table to the byte stream in FITS format
+			t.write(b, format='fits')	# write the Table to the byte stream in FITS format
 
-			d = date.today()						# get today's date
+			d = date.today()			# get today's date
+			
+			with open('testfits.fits', 'w') as f:
+				
+				f.write(b.getvalue().decode('ascii'))
 
-			cur.execute("INSERT INTO SCANRESULTS (?,?)", (nextscan['id'], b.getvalue()))	# store scan name, date, type, and data in the db
+			cur.execute("INSERT INTO SCANRESULTS VALUES (?,?)", (nextscan['id'], b.getvalue()))	# store scan name, date, type, and data in the db
 			srtdb.commit()
 
 		cur.execute("UPDATE SCANIDS SET STATUS = ? WHERE ID = ?", (scandata[1], nextscan['id']))
-		cur.execute("INSERT INTO SCANHISTORY (?,?,?,?,?,?)", (nextscan['id'], nextscan['name'], nextscan['type'], d.day, d.month, d.year))
+		scanname = cur.execute("SELECT * FROM SCANIDS WHERE ID = ?", (nextscan['id'],)).fetchone()['name']
+		cur.execute("INSERT INTO SCANHISTORY VALUES (?,?,?,?,?,?)", (nextscan['id'], scanname, nextscan['type'], d.day, d.month, d.year))
 		srtdb.commit()
 
 		srtdb.close()
@@ -281,7 +288,7 @@ class Scan:
 	# Helper method to get the current time from an NTP server.
 	#
 	# :return unixtime: current unix time
-	def getcurrenttime():
+	def getcurrenttime(self):
 
 		NTP_SERVER = 'ntp.carleton.edu'
 	
@@ -296,7 +303,7 @@ class Scan:
 	#
 	# :param pos: tuple containing right ascension and declination
 	# :return azal: tuple containing azimuth and altitude, or a string containing an error code
-	def getazal(pos):
+	def getazal(self, pos):
 
 		print('calculating azal')
 
@@ -304,33 +311,39 @@ class Scan:
 		srtdb.row_factory = sqlite3.Row
 		cur = srtdb.cursor()
 
-		configdata = cur.execute("SELECT * FROM CONFIG").fetchone()						# retrieve config data from the database
+		configdata = cur.execute("SELECT * FROM CONFIG").fetchone()		# retrieve config data from the database
 
-		position = SkyCoord(pos[0], pos[1], frame = 'icrs')								# convert position into astropy SkyCoord object for coord transformation
+		position = SkyCoord(pos[0], pos[1], frame = 'icrs')				# convert position into astropy SkyCoord object for coord transformation
 
 		location = EarthLocation(lat = configdata['lat'], lon = configdata['lon'], height = configdata['height']) 	# convert location into astropy EarthLocation
 
-		srtdb.close()														# database connection no longer needed
+		srtdb.close()
 
-		unixtime = getcurrenttime()											# get curent time to establish AltAz reference frame
+		unixtime = self.getcurrenttime()		# get curent time to establish AltAz reference frame
 
-		observingtime = Time(unixtime, format = 'unix')						# create astropy Time object using converted ntp time
+		observingtime = Time(unixtime, format = 'unix')		# create astropy Time object using converted ntp time
 
 		azalframe = AltAz(location = location, obstime = observingtime)		# create AltAz reference frame
 
 		try:
 
-			position = position.transform_to(azalframe)			# transform position from galactic coords to az/alt coords
+			position = position.transform_to(azalframe)		# transform position from galactic coords to az/alt coords
 
-		except ValueError as e:
+		except ValueError as e:		# if transformation is impossible, return position error
 
 			print('positionerror')
 
 			return 'positionerror'
 
-		azal = (position.az, position.al)						# create azal tuple
+		azal = (float(position.az.to_string(unit=u.deg, decimal=True)), float(position.alt.to_string(unit=u.deg, decimal=True)))		# create azal tuple
+		
+		if azal[1] < 0 or azal[1] > 180:	# if position is not in the sky, return position error
+			
+			print('positionerror')
+			
+			return 'positionerror'
 
-		if azal[0] < configdata['azlower'] or azal[0] > configdata['azupper']:
+		if azal[0] < configdata['azlower'] or azal[0] > configdata['azupper']:	# if motion would violate movement bounds, return movebounds error
 
 			print('moveboundserror')
 
@@ -345,3 +358,30 @@ class Scan:
 		print(str(azal[0]) + ', ' + str(azal[1]))
 
 		return azal
+
+
+def main():
+	
+	srtdb = sqlite3.connect('srtdata.db')	# establish a connection and cursor into the database
+	srtdb.row_factory = sqlite3.Row
+	cur = srtdb.cursor()
+	
+	# cur.execute("INSERT INTO SCANIDS VALUES (?,?,?)", (-50, 'scantest', 'scheduled'))
+	# cur.execute("INSERT INTO SCANPARAMS VALUES (?,?,?,?,?,?,?,?,?)", (-50, 'track', 'sun', '9h46m58s', '13d22m20s', '0h0m30s', 1500, 1510, 10))
+	# srtdb.commit()
+	
+	scan = cur.execute("SELECT * FROM SCANPARAMS WHERE ID = ?", (-50,)).fetchone()
+	
+	nextscan = {}
+	
+	for key in scan.keys():
+		
+		nextscan[key.lower()] = scan[key]
+	
+	station = Scan()
+	
+	# _thread.start_new_thread(station.donextscan, (nextscan,))
+	
+	station.donextscan(nextscan)
+
+main()

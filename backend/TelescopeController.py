@@ -6,7 +6,7 @@ Author: Nathan Rowley
 Date: August 2018
 '''
 
-import Scan
+from Scan import Scan
 import Schedule
 import ntplib
 import datetime
@@ -29,7 +29,7 @@ def main():
 	srtdb.row_factory = sqlite3.Row
 	cur = srtdb.cursor()
 
-	telescope = Scan.Scan()			# initialize a Scan object for running scans
+	telescope = Scan()			# initialize a Scan object for running scans
 
 	config = cur.execute("SELECT * FROM CONFIG").fetchone()		# fetch config data from the db
 
@@ -238,7 +238,13 @@ def runscan(schedule):
 					cur.execute("UPDATE SCANIDS SET STATUS = ? WHERE ID = ?", ('running', block.scanid))	# set scan status to running
 					srtdb.commit()
 
-					nextscan = cur.execute("SELECT * FROM SCANPARAMS WHERE ID = ?", (block.scanid,))		# get scan params for the db
+					scanparams = cur.execute("SELECT * FROM SCANPARAMS WHERE ID = ?", (block.scanid,))		# get scan params for the db
+					
+					nextscan = {}
+					
+					for key in scanparams:
+						
+						nextscan[key.lower()] = scanparams[key]
 
 					_thread.start_new_thread(telescope.donextscan, (nextscan,))				# spawn a new thread running the donextscan() method
 

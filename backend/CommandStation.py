@@ -8,18 +8,10 @@ Date: June 2018
 
 from astropy.coordinates import SkyCoord, EarthLocation, AltAz
 from astropy.time import Time
-import socket
 import time
 import sqlite3
 import serial
-
-
-### change these depending on which converter is attached to the telescope and how it is configured ###
-
-# SEND_PORT = 23 				# port number (int) of the converter connected to the station
-# SEND_IP = '192.168.0.8' 	# ip address (str) of the converter connnected to the station
-# DEFAULT_BUFFER_SIZE = 4096
-# DEFAULT_TIMEOUT = 10
+import math
 
 class CommandStation:
 	
@@ -28,7 +20,7 @@ class CommandStation:
 	# :param newaz: target azimuth
 	# :param newal: target altitude
 	# :return successful: a boolean indicating whether movement was successfully completed
-	def movebyazal(newaz, newal):
+	def movebyazal(self, newaz, newal):
 
 		### get current station position ###
 
@@ -68,7 +60,7 @@ class CommandStation:
 
 				azdirection = 0
 
-			azcount = int(floor(abs(newaz - curaz) * 11.7))	# determine azimuth count value for the stamp controller
+			azcount = int(math.floor(abs(newaz - curaz) * 11.7))	# determine azimuth count value for the stamp controller
 
 		if not alset:
 
@@ -80,11 +72,9 @@ class CommandStation:
 
 				aldirection = 2
 
-			alcount = int(floor(abs(newal - cural) * 11.7)) 	# calculate altitude count value
+			alcount = int(math.floor(abs(newal - cural) * 11.7)) 	# calculate altitude count value
 
 		ser = serial.Serial('/dev/ttyAMA0', baudrate = 2400, timeout = 1)
-
-		# self.sock.connect((self.addr,self.port))		# open connection to the serial to ethernet converter
 
 		while not azset or not alset:					# while loop will always set azimuth first if not already set, then altitude if not already set
 
@@ -100,37 +90,39 @@ class CommandStation:
 
 			# ser.open()
 
-			# ser.write(message.encode('ascii'))
+			ser.write(message.encode('ascii'))
 
-			# self.sock.send(message.encode('ascii'))					# send message to stamp via serial to ethernet converter
 			print('movement data sent')
 
-			# received = False
-			# response = ''
+			received = False
+			response = ''
 
-			# while not received:
+			while not received:
 
-			# 	rbyte = ser.read()
+				rbyte = ser.read()
 
-			# 	if len(rbyte) > 0:
+				if len(rbyte) > 0:
 
-			# 		response += rbyte.decode('ascii')
+					response += rbyte.decode('ascii')
 
-			# 	else:
+				else:
 
-			# 		if len(response) > 0:
+					if len(response) > 0:
 
-			# 			received = True
+						received = True
 
-			# ser.close()
-			
-			# # response = self.sock.recv(DEFAULT_BUFFER_SIZE).decode('ascii').strip().split()		# receive and format response data
+			ser.close()
 
 			# response = response.strip().split()
 
 			print('reply received')
-
-			response = ['M']
+			
+			if response == message:
+				
+				curaz = newaz
+				cural = newal
+				print(str(curaz) + ' ' + str(cural))
+				break
 			
 			if response[0] == 'M':								# response indicates successful completion of movement
 
@@ -179,14 +171,6 @@ class CommandStation:
 
 		srtdb.close()														# database connection no longer needed
 
-		### close socket ###
-
-		# try:
-		# 	self.sock.shutdown(socket.SHUT_RDWR)
-		# 	self.sock.close()
-		# except OSError:
-		# 	pass  				# server already closed socket
-
 		return successful
 
 	
@@ -194,31 +178,31 @@ class CommandStation:
 	#
 	# :para freq: frequency at which to takea reading
 	# :return power: float containing the power reading at the frequency freq
-	def readpower(freq):
+	def readpower(self, freq):
 
 		### prepare command message ###
 
 		j = int((freq / 0.04) + 0.5)			# calculate integer value j necessary for conversion to byte sections to feed stamp controller
 		atten = 0								# currently no means of setting attenuation constant, 0 is default of no attenuation
 		b8 = atten
-		b9 = j & 0x3f							# upper 3 bits of j
+		b9 = j & 0x3f							# upper 3 bytes of j
 		b10 = (j >> 6) & 0xff					# next byte of j
 		b11 = (j >> 14) & 0xff					# lower byte of j
 
-		message = []							# message must be constructed as a list to properly send command
-		message.append('freq')
-		message.append(b11)
-		message.append(b10)
-		message.append(b9)
-		message.append(b8)
+		# message = []							# message must be constructed as a list to properly send command
+		# message.append('freq')
+		# message.append('f')
+		# message.append('r')
+		# message.append('e')
+		# message.append('q')
+		# message.append(b11)
+		# message.append(b10)
+		# message.append(b9)
+		# message.append(b8)
+		
+		message = ' freq ' + str(b11) + ' ' + str(b10) + ' ' + str(b9) + ' ' + str(b8) + '\n'
 
 		print(message)
-
-		### send commmand message and receive response ###
-
-		# self.sock.connect((self.addr,self.port))
-		# for e in message:
-		# 	self.sock.send(e.encode('ascii'))
 
 		ser = serial.Serial('/dev/ttyAMA0', baudrate = 2400, timeout = 1)
 
@@ -227,53 +211,44 @@ class CommandStation:
 		# for e in message:
 
 		# 	ser.write(e.encode('ascii'))
-
-		# received = False
-		# response = []
-
-		# while not received:
-
-		# 	rbyte = ser.read()
-
-		# 	if len(rbyte) > 0:
-
-		# 		response.append(int(rbyte))
-
-		# 	else:
-
-		# 		if len(response) > 0:
-
-		# 			received = True
-
-		# ser.close()
-
-		# deprecated
 		
-		# receive response from stamp via serial to ethernet converter
-		# stamp sends back one thing at a time, so a loop is necessary to receive all the data
+		ser.write(message.encode('ascii'))
+
+		received = False
 		# response = []
-		# for x in range(300):
-		# 	try:
-		# 		j = self.sock.recv(DEFAULT_BUFFER_SIZE)
-		# 		print(j.decode('ascii').strip())
-		# 		response.append(j.decode('ascii').strip())
-		# 	except OSError:
-		# 		break											# TCP socket times out after stamp stops sending
 		
+		response = ''
 
-		# response = self.sock.recv(DEFAULT_BUFFER_SIZE).decode('ascii').strip().split()		# receive and format response data
+		while not received:
 
-		### close socket ###
+			rbyte = ser.read()
 
-		# try:
-		# 	self.sock.shutdown(socket.SHUT_RDWR)
-		# 	self.sock.close()
-		# except OSError:
-		# 	pass  				# server already closed socket
+			if len(rbyte) > 0:
+
+				# response.append(int(rbyte))
+				response += rbyte.decode('ascii')
+
+			else:
+
+				if len(response) > 0:
+
+					received = True
+
+		ser.close()
 
 		### calculate power from received values and return ###
+		
+		if response == message:
+			
+			print('power received')
 
-		response = [100, 1, 244]
+			response = [100, 1, 244]
+			
+		else:
+			
+			print('power failed')
+			
+			return 0
 
 		w2 = response[0]
 		w1 = response[1] * 256 + response[2]
