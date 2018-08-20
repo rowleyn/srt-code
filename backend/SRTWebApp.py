@@ -28,9 +28,6 @@ admin_password = 'something'
 normal_username = 'student'
 normal_password = 'something'
 
-max_users = 10
-current_users = 0
-
 @app.before_request
 def before_request:
 	session.permanent = True
@@ -40,9 +37,6 @@ def before_request:
 # url for logging in, all urls redirect to this one if a user is not logged in
 @app.route('/login', methods=['GET','POST'])
 def login():
-	
-	global max_users
-	global current_users
 	
 	if 'username' not in session:
 
@@ -56,37 +50,17 @@ def login():
 	
 				if request.form['password'] == admin_password:
 	
-					if current_users <= max_users:
+					session['username'] = admin_username
 	
-						session['username'] = admin_username
-	
-						current_users = current_users + 1
-						
-						print(current_users)
-	
-						return redirect(url_for('main_page'))
-	
-					else:
-	
-						return 'toomanyusers'
+					return redirect(url_for('main_page'))
 	
 			if request.form['username'] == normal_username:
 	
 				if request.form['password'] == normal_password:
 	
-					if current_users <= max_users:
+					session['username'] = normal_username
 	
-						session['username'] = normal_username
-	
-						current_users = current_users + 1
-						
-						print(current_users)
-	
-						return redirect(url_for('main_page'))
-	
-					else:
-	
-						return 'toomanyusers'
+					return redirect(url_for('main_page'))
 	
 			return 'failure'
 			
@@ -95,16 +69,10 @@ def login():
 # url for logging out, 
 @app.route('/logout')
 def logout():
-	
-	global current_users
 
 	if 'username' in session:
 		
 		session.pop('username', None)
-	
-		current_users = current_users - 1
-		
-		print(current_users)
 	
 		return 'logged out'
 
@@ -181,7 +149,7 @@ def get_status():
 			responsepython['starttime'] = scantimes['starttime']
 			responsepython['endtime'] = scantimes['endtime']
 	
-		srtdb.close()												# database connection no longer needed
+		srtdb.close()
 	
 		responsejson = json.JSONEncoder().encode(responsepython)	# convert response into json
 	
@@ -220,7 +188,7 @@ def submit_scan():
 	
 			uniqueid = False
 	
-			while not uniqueid:
+			while not uniqueid:		# set a unique id for the scan, this will persist until no trace of the scan is left in the db
 	
 				scanid = random.randint(1,1000000000000)
 	
@@ -239,9 +207,9 @@ def submit_scan():
 	
 				else:
 	
-					sourcepos = cur.execute("SELECT * FROM SOURCES WHERE NAME = ?", (newscan['source'],)).fetchone()
+					sourcepos = cur.execute("SELECT * FROM SOURCES WHERE NAME = ?", (newscan['source'],)).fetchone()	# fetch source position data from db
 	
-					if sourcepos == None:
+					if sourcepos == None:		# if no matching source is found, set scan status as sourceerror
 	
 						today = date.today()
 	
@@ -258,7 +226,7 @@ def submit_scan():
 	
 			config = cur.execute("SELECT * FROM CONFIG").fetchone()
 	
-			if float(newscan['freqlower']) < config['freqlower'] or float(newscan['frequpper']) > config['frequpper']:
+			if float(newscan['freqlower']) < config['freqlower'] or float(newscan['frequpper']) > config['frequpper']:	# if scan frequencies are out of bounds, set scan status as freqboundserror
 	
 				today = date.today()
 	
@@ -277,7 +245,7 @@ def submit_scan():
 			cur.execute("INSERT INTO SCANPARAMS VALUES (?,?,?,?,?,?,?,?,?)", params)	# insert new scan into database and commit change
 			srtdb.commit()
 	
-		srtdb.close()	# database connection no longer needed
+		srtdb.close()
 	
 		return scheduleGetter()
 		
@@ -305,7 +273,7 @@ def deschedule_scan():
 		srtdb.row_factory = sqlite3.Row
 		cur = srtdb.cursor()
 	
-		valid = True
+		valid = True			# sanitze incoming client data
 	
 		valid = valid and (re.fullmatch('1[0-9]*', str(scanid)) != None) and scanid >= 1 and scanid <= 1000000000000
 	
@@ -314,7 +282,7 @@ def deschedule_scan():
 			cur.execute("UPDATE SCANIDS SET STATUS = ? WHERE ID = ?", ('cancelled', scanid))	# set scan status to cancelled
 			srtdb.commit()
 	
-		srtdb.close()	# database connection no longer needed
+		srtdb.close()
 	
 		return scheduleGetter()
 		
@@ -330,7 +298,7 @@ def get_sources():
 		
 	return redirect(url_for('login'))
 
-# url for uploading a new source or updating an existing source, returns the newly updated source list
+# url for uploading a new source or updating an existing source, returns the newly updated source list. admin access required
 @app.route('/uploadsource', methods=['POST'])
 def add_source():
 	
@@ -342,7 +310,7 @@ def add_source():
 		srtdb.row_factory = sqlite3.Row
 		cur = srtdb.cursor()
 	
-		valid = True
+		valid = True		# sanitize incoming client data
 	
 		valid = valid and len(newsource['name']) <= 30
 		valid = valid and (re.fullmatch('0*(?:[0-9]|1\d|2[0-3])h0*(?:[0-9]|[1-5]\d)m0*(?:[0-9]|[1-5]\d)s|0*24h0+m0+s', newsource['ras']) != None)
@@ -350,11 +318,11 @@ def add_source():
 	
 		if valid:
 	
-			source = cur.execute("SELECT NAME FROM SOURCES WHERE NAME = ? LIMIT 1", (newsource['name'],)).fetchone()							# check database for preexisting source
+			source = cur.execute("SELECT NAME FROM SOURCES WHERE NAME = ? LIMIT 1", (newsource['name'],)).fetchone()		# check database for preexisting source
 	
 			if source == None:
 	
-				cur.execute("INSERT INTO SOURCES VALUES (?,?,?)", (newsource['name'], newsource['ras'], newsource['dec']))						# insert new source if preexisting is not found
+				cur.execute("INSERT INTO SOURCES VALUES (?,?,?)", (newsource['name'], newsource['ras'], newsource['dec']))			# insert new source if preexisting is not found
 	
 			else:
 	
@@ -362,7 +330,7 @@ def add_source():
 	
 			srtdb.commit()
 	
-		srtdb.close()				# database connection no longer needed
+		srtdb.close()
 	
 		return sourceGetter()
 		
@@ -372,7 +340,7 @@ def add_source():
 		
 	return redirect(url_for('login'))
 
-# url for removing a source from the database, returns the newly updated source list
+# url for removing a source from the database, returns the newly updated source list. admin access required
 @app.route('/removesource', methods=['POST'])
 def remove_source():
 	
@@ -380,11 +348,11 @@ def remove_source():
 
 		sourcename = request.get_data().decode('ascii') 	# get name of source to be removed
 	
-		srtdb = sqlite3.connect('srtdata.db')				# establish a connection and cursor into the database
+		srtdb = sqlite3.connect('srtdata.db')		# establish a connection and cursor into the database
 		srtdb.row_factory = sqlite3.Row
 		cur = srtdb.cursor()
 	
-		valid = True
+		valid = True		# sanitize client data
 	
 		valid = valid and len(sourcename) <= 30
 	
@@ -393,7 +361,7 @@ def remove_source():
 			cur.execute("DELETE FROM SOURCES WHERE NAME = ?", (sourcename,))	# remove source with matching name and commit change
 			srtdb.commit()
 	
-		srtdb.close()				# database connection no longer needed
+		srtdb.close()
 	
 		return sourceGetter()
 		
@@ -403,7 +371,7 @@ def remove_source():
 		
 	return redirect(url_for('login'))
 
-# url for updating the configuration parameters, returns the newly updated parameters
+# url for updating the configuration parameters, returns the newly updated parameters. admin access required
 @app.route('/updateconfig', methods=['POST'])
 def update_config():
 	
@@ -502,11 +470,11 @@ def download_scans():
 		cur = srtdb.cursor()
 	
 		b = io.BytesIO()
-		f = zipfile.ZipFile(b,'w')					# open a new zip archive in memory
+		f = zipfile.ZipFile(b,'w')		# open a new zip archive in memory
 	
 		filenames = {}
 	
-		for scanid in idlist:						# write each scan as a .fits file to the archive
+		for scanid in idlist:		# write each scan as a .fits file to the archive
 	
 			scanresult = cur.execute("SELECT * FROM SCANRESULTS WHERE ID = ?", (scanid,)).fetchone()
 			scanname = cur.execute("SELECT * FROM SCANIDS WHERE ID = ?", (scanid,)).fetchone()
@@ -526,9 +494,9 @@ def download_scans():
 	
 			f.writestr(filename, scanresult['data'])
 	
-		f.close()									# close the zip archive to avoid problems
+		f.close()	# close the zip archive to avoid problems
 	
-		srtdb.close()								# database connection no longer needed
+		srtdb.close()
 	
 		response = make_response(b.getvalue())		# package zip archive in a Flask Response object
 	
@@ -548,7 +516,7 @@ def search_scans():
 		srtdb.row_factory = sqlite3.Row
 		cur = srtdb.cursor()
 	
-		valid = True
+		valid = True		# sanitize client data
 	
 		valid = valid and len(searchparams['name']) <= 30
 		valid = valid and (re.fullmatch('(?:any)|\d\d\d\d', searchparams['year']) != None)
@@ -556,7 +524,7 @@ def search_scans():
 	
 		if valid:
 	
-			if searchparams['name'] == '':					# search in the specified date range, either with or without name param
+			if searchparams['name'] == '':			# search in the specified date range, either with or without name param
 	
 				if searchparams['month'] == 'any':
 	
@@ -588,11 +556,11 @@ def search_scans():
 	
 					scandates = cur.execute("SELECT * FROM SCANHISTORY WHERE NAME = ?, MONTH = ?, YEAR = ?", (searchparams['name'], searchparams['month'], searchparams['year'])).fetchall()
 	
-		srtdb.close()								# database connection no longer needed
+		srtdb.close()
 	
 		scanlist = []
 	
-		for scan in scandates:							# build list of search results
+		for scan in scandates:		# build list of search results
 	
 			scanlist.append({'id': scan['id'], 'name': scan['name'], "date": str(scan['month']) + '/' + str(scan['day']) + '/' + str(scan['year'])})
 	
@@ -604,7 +572,7 @@ def search_scans():
 		
 	return redirect(url_for('login'))
 
-
+# url for deleting scan fits files from the db. admin access required
 @app.route('/deletescans', methods=['POST'])
 def delete_scan():
 	
@@ -616,7 +584,7 @@ def delete_scan():
 		srtdb.row_factory = sqlite3.Row
 		cur = srtdb.cursor()
 	
-		for scanid in scanids:						# delete scans from the database
+		for scanid in scanids:		# delete scans from the database
 	
 			cur.execute("DELETE FROM SCANRESULTS WHERE ID = ?", (scanid,))
 			cur.execute("DELETE FROM SCANHISTORY WHERE ID = ?", (scanid,))
@@ -625,7 +593,7 @@ def delete_scan():
 	
 		srtdb.commit()
 	
-		srtdb.close()								# database connection no longer needed
+		srtdb.close()
 	
 		return 'completed'
 		
@@ -635,7 +603,7 @@ def delete_scan():
 		
 	return redirect(url_for('login'))
 
-
+# url for getting and setting the telescope status
 @app.route('/scanstatus', methods=['GET','POST'])
 def get_scanstatus():
 	
@@ -645,11 +613,11 @@ def get_scanstatus():
 		srtdb.row_factory = sqlite3.Row
 		cur = srtdb.cursor()
 	
-		if request.method == 'POST':
+		if request.method == 'POST':	# post method for resetting telescope status after timeout is resolved
 	
-			newstatus = request.get_json()
+			newstatus = request.get_json()		# get client data from json
 	
-			valid = True
+			valid = True		# sanitize client data
 	
 			valid = valid and (re.fullmatch('1[0-9]*', str(newstatus['id'])) != None) and newstatus['id'] >= 1 and newstatus['id'] <= 1000000000000
 	
@@ -657,12 +625,12 @@ def get_scanstatus():
 	
 				currentstatus = cur.execute("SELECT * FROM STATUS").fetchone()
 	
-				if currentstatus['id'] == newstatus['id'] and currentstatus['code'] != 'ok':
+				if currentstatus['id'] == newstatus['id'] and currentstatus['code'] != 'ok':	# set status back to ok
 	
 					cur.execute("UPDATE STATUS SET CODE = ?", ('ok',))
 					srtdb.commit()
 	
-		currentstatus = cur.execute("SELECT * FROM STATUS").fetchone()
+		currentstatus = cur.execute("SELECT * FROM STATUS").fetchone()		# fetch and build status response
 	
 		responsepython = {'id': currentstatus['id'], 'code': currentstatus['code']}
 	
@@ -674,7 +642,7 @@ def get_scanstatus():
 		
 	return redirect(url_for('login'))
 
-
+# url for getting the scan history
 @app.route('/gethistory', methods=['POST'])
 def get_history():
 	
@@ -684,7 +652,7 @@ def get_history():
 		srtdb.row_factory = sqlite3.Row
 		cur = srtdb.cursor()
 	
-		history = cur.execute("SELECT * FROM SCANHISTORY").fetchall();
+		history = cur.execute("SELECT * FROM SCANHISTORY ORDER BY DAY, MONTH, YEAR ASC").fetchall();	# fetch scan history in ascending order
 	
 		today = date.today()
 	
@@ -694,15 +662,15 @@ def get_history():
 	
 			status = cur.execute("SELECT * FROM SCANIDS WHERE ID = ?", (scan['id'],))
 	
-			if not (scan['year'] < today.year or scan['month'] < today.month or today.day - scan['day'] > 3):
+			if not (scan['year'] < today.year or scan['month'] < today.month or today.day - scan['day'] > 3):	# if scan is less than four days old, include in the response
 	
 				historylist.append({'name': scan['name'], 'type': scan['type'], 'date': str(scan['month']) + '/' + str(scan['day']) + '/' + str(scan['year']), 'status': status['status']})
 	
-			else:
+			else:		# if scan is four or more days old, check if scan has any data stored
 	
 				hasdata = cur.execute("SELECT ID FROM SCANRESULTS WHERE ID = ?", (scan['id'],)).fetchone()
 	
-				if hasdata == None:
+				if hasdata == None:		# if no data is stored, remove scan from the system
 	
 					cur.execute("DELETE FROM SCANHISTORY WHERE ID = ?", (scan['id'],))
 					cur.execute("DELETE FROM SCANPARAMS WHERE ID = ?", (scan['id'],))
@@ -768,6 +736,8 @@ def scheduleGetter():
 		scan['endtime'] = block['endtime']
 
 		scanlist.append(scan)						# add scan to response
+		
+	srtdb.close()
 
 	responsejson = json.JSONEncoder().encode(scanlist)	# convert response to json
 
@@ -788,11 +758,11 @@ def sourceGetter():
 
 	sources = cur.execute("SELECT * FROM SOURCES").fetchall()		# retrieve all sources from the database
 
-	srtdb.close()								# database connection no longer needed
+	srtdb.close()
 
 	sourcelist = []
 
-	for source in sources:						# add each source name to the response
+	for source in sources:		# add each source name to the response
 
 		sourcelist.append({'name': source['name'], 'ras': source['ras'], 'dec': source['dec']})
 
@@ -818,7 +788,7 @@ def configGetter( section ):
 
 	srtdb.close()
 
-	if section == 'nameloc':
+	if section == 'nameloc':	# build response list based on keyword
 
 		configlist = [config['name'], config['lat'], config['lon'], config['height']]
 

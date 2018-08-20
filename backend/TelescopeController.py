@@ -119,17 +119,17 @@ def main():
 
 		newscan = cur.execute("SELECT * FROM SCANIDS WHERE STATUS = ?", ('submitted',)).fetchone()
 
-		if newscan != None:
+		if newscan != None:				# check if a scan has been submitted
 
 			print('yes there is!')
 
 			scanparams = cur.execute("SELECT * FROM SCANPARAMS WHERE ID = ?", (newscan['id'],)).fetchone()
 
-			if scanparams['source'] == 'sun':
+			if scanparams['source'] == 'sun':		# if source is the sun, schedule during the day
 
 				status = dayschedule.schedulescan(scanparams['id'], curtime)
 
-			else:
+			else:		# if source is not the sun, schedule at night
 
 				status = nightschedule.schedulescan(scanparams['id'], curtime)
 
@@ -141,11 +141,11 @@ def main():
 
 		print('did the current scan finish running?')
 
-		if currentscanid != None:
+		if currentscanid != None:		# check to see if a scan is supposed to be running
 
 			currentscan = cur.execute("SELECT * FROM SCANIDS WHERE ID = ?", (currentscanid,)).fetchone()
 
-			if currentscan == None or currentscan['status'] != 'running':
+			if currentscan == None or currentscan['status'] != 'running':	# if scan is not running anymore, remove from schedule and reset currentscanid
 
 				print('yes it did!')
 
@@ -231,7 +231,7 @@ def runscan(schedule):
 					cur.execute("UPDATE SCANIDS SET STATUS = ? WHERE ID = ?", ('timeout', block.scanid))
 					srtdb.commit()
 
-				else:
+				else:			# if no timeout is in effect, spawn a new thread to run the next scan
 
 					print('spawning thread to run next scan')
 

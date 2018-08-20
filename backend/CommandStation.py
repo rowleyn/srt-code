@@ -74,7 +74,7 @@ class CommandStation:
 
 			alcount = int(math.floor(abs(newal - cural) * 11.7)) 	# calculate altitude count value
 
-		ser = serial.Serial('/dev/ttyAMA0', baudrate = 2400, timeout = 1)
+		ser = serial.Serial('/dev/ttyAMA0', baudrate = 2400, timeout = 1)		# initialize and open a serial port to the stamp controller
 
 		while not azset or not alset:					# while loop will always set azimuth first if not already set, then altitude if not already set
 
@@ -88,30 +88,28 @@ class CommandStation:
 
 			print(message)
 
-			# ser.open()
-
-			ser.write(message.encode('ascii'))
+			ser.write(message.encode('ascii'))		# write message to the serial port
 
 			print('movement data sent')
 
 			received = False
 			response = ''
 
-			while not received:
+			while not received:		# loop to receive response one byte at a time
 
-				rbyte = ser.read()
+				rbyte = ser.read()	# read from serial port
 
-				if len(rbyte) > 0:
+				if len(rbyte) > 0:	# if a byte was received, decode and append to response
 
 					response += rbyte.decode('ascii')
 
-				else:
+				else:	# if no byte was received and a response has been received already, stop reading
 
 					if len(response) > 0:
 
 						received = True
 
-			ser.close()
+			ser.close()		# close the serial port
 
 			# response = response.strip().split()
 
@@ -124,7 +122,7 @@ class CommandStation:
 				print(str(curaz) + ' ' + str(cural))
 				break
 			
-			if response[0] == 'M':								# response indicates successful completion of movement
+			if response[0] == 'M':		# response indicates successful completion of movement
 
 				if not azset:
 
@@ -136,7 +134,7 @@ class CommandStation:
 					cural = newal
 					alset = True
 
-			else:												# response indicates stamp timeout, pause scan and wait until it is unpaused
+			else:					# response indicates stamp timeout, set telescope status to timeout and exit
 
 				cur.execute("UPDATE STATUS SET CODE = ?", ('timeout',))
 
@@ -204,9 +202,7 @@ class CommandStation:
 
 		print(message)
 
-		ser = serial.Serial('/dev/ttyAMA0', baudrate = 2400, timeout = 1)
-
-		# ser.open()
+		ser = serial.Serial('/dev/ttyAMA0', baudrate = 2400, timeout = 1)	# initialize and open a serial port to the stamp controller
 
 		# for e in message:
 
@@ -219,9 +215,9 @@ class CommandStation:
 		
 		response = ''
 
-		while not received:
+		while not received:		# loop to receive response one byte at a time
 
-			rbyte = ser.read()
+			rbyte = ser.read()	# read from serial port
 
 			if len(rbyte) > 0:
 
@@ -252,7 +248,7 @@ class CommandStation:
 
 		w2 = response[0]
 		w1 = response[1] * 256 + response[2]
-		power = 1e6 * (w2 / w1)
+		power = 1e6 * (w2 / w1)				# calculate power from response values
 		gaincor = 1							# currently no means of setting gain correction. likely will be set to 1 anyway
 		if atten == 0:
 			power = gaincor * power
