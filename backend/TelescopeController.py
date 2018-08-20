@@ -43,12 +43,12 @@ def main():
 	print('Daystart: ' + daytimes[0].isoformat() + ', Dayend: ' + daytimes[1].isoformat())
 	print('Nightstart:' + nighttimes[0].isoformat() + ', Nightend: ' + nighttimes[1].isoformat())
 
-	dusk = Time(nighttimes[0], format = 'datetime', scale = 'utc').unix 	# transform times to unix time using astropy Time objects
-	dawn = Time(nighttimes[1], format = 'datetime', scale = 'utc').unix
-	sunrise = Time(daytimes[0], format = 'datetime', scale = 'utc').unix
-	sunset = Time(daytimes[1], format = 'datetime', scale = 'utc').unix
+	dusk = nighttimes[0].timestamp()	# get unix times for day and night
+	dawn = nighttimes[1].timestamp()
+	sunrise = daytimes[0].timestamp()
+	sunset = daytimes[1].timestamp()
 
-	dayschedule = Schedule.Schedule(sunrise + 7200, sunset - 7200)					# instantiate day and night schedules
+	dayschedule = Schedule.Schedule(sunrise + 7200, sunset - 7200)		# instantiate day and night schedules
 	nightschedule = Schedule.Schedule(dusk, dawn)
 
 	currentscanid = None
@@ -58,7 +58,7 @@ def main():
 
 	while True:
 
-		time.sleep(10)			# sleep for half a second to reduce looping speed
+		time.sleep(0.5)			# sleep for half a second to reduce looping speed
 
 
 		### set whether it is day or night ###
@@ -78,7 +78,7 @@ def main():
 
 		config = cur.execute("SELECT * FROM CONFIG").fetchone()		# get config data from the db
 
-		newday = datetime.date.today()										# get today's date
+		newday = datetime.date.today()								# get today's date
 
 		if newday.day != today.day or newday.month != today.month or newday.year != today.year:	# if the day has changed, create new day schedule
 
@@ -93,7 +93,7 @@ def main():
 
 			dayschedule = Schedule(sunrise + 7200, sunset - 7200)
 
-		if curtime > dawn:													# if the night if over, create new night schedule
+		if curtime > dawn:											# if the night is over, create new night schedule
 
 			print('good morning! setting up new nighttime schedule')
 
@@ -186,10 +186,10 @@ def cancelscans(schedule):
 
 				print('found a cancelled scan')
 
-				params = cur.execute("SELECT * FROM SCANPARAMS WHERE ID = ?", (block.scanid,))		# if scan is cancelled, remove from the schedule and add to history
+				scantype = cur.execute("SELECT * FROM SCANPARAMS WHERE ID = ?", (block.scanid,)).fetchone()['type']		# if scan is cancelled, remove from the schedule and add to history
 
 				cur.execute("DELETE FROM SCHEDULE WHERE ID = ?", (block.scanid,))
-				cur.execute("INSERT INTO SCANHISTORY VALUES (?,?,?,?,?,?)", (block.scanid, params['name'], params['type'], today.day, today.month, today.year))
+				cur.execute("INSERT INTO SCANHISTORY VALUES (?,?,?,?,?,?)", (block.scanid, status['name'], scantype, today.day, today.month, today.year))
 				srtdb.commit()
 
 				schedule.deschedulescan(block.scanid)
@@ -215,19 +215,19 @@ def runscan(schedule):
 
 		if block.scanid != None:
 
-			if curtime >= block.starttime - 5 and curtime <= block.starttime + 5:		# if the start time is now, run the scan
+			if curtime >= block.starttime - 5 and curtime <= block.starttime + 5:		# if the start time is now, try to run the scan
 
 				status = cur.execute("SELECT * FROM STATUS").fetchone()
 
-				if status['code'] == 'timeout':
+				if status['code'] == 'timeout':						# if telescope is currently timed out, cancel the scan
 
 					print('cancelling next scan due to timeout')
 
 					today = datetime.date.today()
 
-					params = cur.execute("SELECT * FROM SCANPARAMS WHERE ID = ?", (block.scanid,))
+					scantype = cur.execute("SELECT * FROM SCANPARAMS WHERE ID = ?", (block.scanid,)).fetchone()['type']
 
-					cur.execute("INSERT INTO SCANHISTORY VALUES (?,?,?,?,?,?)", (block.scanid, params['name'], params['type'], today.day, today.month, today.year))
+					cur.execute("INSERT INTO SCANHISTORY VALUES (?,?,?,?,?,?)", (block.scanid, status['name'], scantype, today.day, today.month, today.year))
 					cur.execute("UPDATE SCANIDS SET STATUS = ? WHERE ID = ?", ('timeout', block.scanid))
 					srtdb.commit()
 
@@ -238,15 +238,15 @@ def runscan(schedule):
 					cur.execute("UPDATE SCANIDS SET STATUS = ? WHERE ID = ?", ('running', block.scanid))	# set scan status to running
 					srtdb.commit()
 
-					scanparams = cur.execute("SELECT * FROM SCANPARAMS WHERE ID = ?", (block.scanid,))		# get scan params for the db
+					scanparams = cur.execute("SELECT * FROM SCANPARAMS WHERE ID = ?", (block.scanid,)).fetchone()		# get scan params for the db
 					
 					nextscan = {}
 					
-					for key in scanparams:
+					for key in scanparams:		# build dict object of scan params
 						
 						nextscan[key.lower()] = scanparams[key]
 
-					_thread.start_new_thread(telescope.donextscan, (nextscan,))				# spawn a new thread running the donextscan() method
+					_thread.start_new_thread(telescope.donextscan, (nextscan,))		# spawn a new thread running the donextscan() method
 
 				currentscanid = block.scanid
 

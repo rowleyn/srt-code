@@ -104,8 +104,11 @@ class Schedule:
 
 					newblock = Schedule.Block(scanid, starttime, endtime)
 					
-					starttime = re.split('\.|\s', Time(starttime, scale='utc', format='unix').iso)[1]
-					endtime = re.split('\.|\s', Time(endtime, scale='utc', format='unix').iso)[1]
+					starttime = re.split('\.|\s|:', Time(starttime, scale='utc', format='unix').iso) 	# serialize the time string to the proper display format
+					endtime = re.split('\.|\s|:', Time(endtime, scale='utc', format='unix').iso)
+					
+					starttime = starttime[1] + ':' + starttime[2]
+					endtime = endtime[1] + ':' + endtime[2]
 
 					cur.execute("INSERT INTO SCHEDULE VALUES (?,?,?)", (scanid, starttime, endtime))	# update the schedule and scan status in the db
 					srtdb.commit()
@@ -281,7 +284,7 @@ def main():
 	# cur.execute("INSERT INTO SOURCES VALUES (?,?,?)", ('polaris', '2h31m49s', '89d15m50s'))
 	# cur.execute("INSERT INTO SCANIDS VALUES (?,?,?)", (-20, 'scheduletest', 'submitted'))
 	# cur.execute("INSERT INTO SCANPARAMS VALUES (?,?,?,?,?,?,?,?,?)", (-20, 'track', 'polaris', '2h31m49s', '89d15m50s', '0h30m0s', 1500, 1510, 10))
-	srtdb.commit()
+	# srtdb.commit()
 
 	schedule.schedulescan(-20, getcurrenttime())
 	schedule.schedulescan(-30, getcurrenttime())
