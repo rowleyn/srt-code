@@ -29,7 +29,7 @@ normal_username = 'student'
 normal_password = 'something'
 
 @app.before_request
-def before_request:
+def before_request():
 	session.permanent = True
 	app.permanent_session_lifetime = timedelta(minutes=20)
 	session.modified = True

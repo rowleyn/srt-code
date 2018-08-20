@@ -384,4 +384,4 @@ def main():
 	
 	station.donextscan(nextscan)
 
-main()
+# main()

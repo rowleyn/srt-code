@@ -293,4 +293,4 @@ def main():
 
 		print(str(block.scanid) + ' ' + str(block.starttime) + ' ' + str(block.endtime))
 
-main()
+# main()

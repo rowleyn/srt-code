@@ -5,7 +5,7 @@ $( function() {
 	var scandialog,	searchdialog, tips = $( ".validateTips" ),
 		type = $( "#dialog-scanform #type" ), duration = $( "#dialog-scanform #duration" ), freqlower = $( "#dialog-scanform #freqlower"), frequpper = $( "#dialog-scanform #frequpper" ),
 		name = $( "#dialog-scanform #name" ), position = $( "#dialog-scanform #position" ), ras = position.find( "#ras" ), dec = position.find( "#dec" ),
-		step_num = $( "#dialog-scanform #stepnum" ), source = $( "#dialog-scanform #source" ), sourcelist = $( "#dialog-scanform #sourcelist" );
+		step_num = $( "#dialog-scanform #stepnum" ), source = $( "#dialog-scanform #source" ), sourcelist = source.find( "#sourcelist" );
 
 	var allFields = $( [] ).add( type ).add( duration ).add( freqlower ).add( frequpper ).add( step_num ).add( name ).add( ras ).add( dec ).add( sourcelist );
 
@@ -89,35 +89,35 @@ $( function() {
 
 		if ( type.val() === "track" ) {
 
+			source.find( "#tracktype" ).val( "source" );
+			sourcelist.val( "no source" );
 			position.hide();
 			source.show();
 			sourcelist.show();
-			$( ras, "textarea" ).val("");
-			$( dec, "textarea" ).val("");
 		}
 		else {
 
-			$( "#tracktype" ).val( "source" );
+			$( ras, "textarea" ).val("");
+			$( dec, "textarea" ).val("");
 			source.hide();
 			position.show();
-			sourcelist.val( "no source" );
 		};
 	});
 
-	$( "#tracktype" ).on( "change", function( event ) {
+	source.find( "#tracktype" ).on( "change", function( event ) {
 
-		if ( $( "#tracktype" ).val() === "source" ) {
+		if ( source.find( "#tracktype" ).val() === "source" ) {
 
+			sourcelist.val( "no source" );
 			position.hide();
 			sourcelist.show();
-			$( ras, "textarea" ).val("");
-			$( dec, "textarea" ).val("");
 		}
 		else {
 
+			$( ras, "textarea" ).val("");
+			$( dec, "textarea" ).val("");
 			sourcelist.hide();
 			position.show();
-			sourcelist.val( "no source" );
 		};
 	});
 
@@ -306,7 +306,7 @@ $( function() {
 	function submitScan() {
 
 		// make sure position is not undefined if it is unused
-		if ( $( "#tracktype" ).val() === "source" ) {
+		if ( type.val() === "track" && $( "#tracktype" ).val() === "source" ) {
 
 			ras.val( "0h0m0s" );
 			dec.val( "0d0m0s" );
