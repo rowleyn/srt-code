@@ -439,7 +439,7 @@ $( function() {
 		valid = valid && checkRegexp( duration, /^0*[0-7]h0*(?:[0-9]|[1-5]\d)m0*(?:[0-9]|[1-5]\d)s$|^0*8h0+m0+s$/, "Duration must be eight hours or less." );
 		valid = valid && checkRegexp( freqlower, /^[0-9]+\.?[0-9]*$/, "Minimum frequency must be a real number." ) && checkSize( freqlower, "minimum frequency", 0, 10000 );
 		valid = valid && checkRegexp( freqlower, /^[0-9]+\.?[0-9]*$/, "Maximum frequency must be a real number." ) && checkSize( freqlower, "maximum frequency", 0, 10000 );
-		valid = valid && checkRegexp( step_num, /^1[0-9]*$/, "Step number must be a positive integer." ) && checkSize( step_num, "step number", 1, 1000000 );
+		valid = valid && checkRegexp( step_num, /^[1-9][0-9]*$/, "Step number must be a positive integer." ) && checkSize( step_num, "step number", 1, 1000000 );
 		valid = valid && checkRegexp( name, /^.{1,30}$/, "Name must be no more than 30 characters long." );
 
 		return valid;

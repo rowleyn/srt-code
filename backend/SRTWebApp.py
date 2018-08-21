@@ -182,7 +182,7 @@ def submit_scan():
 		valid = valid and (re.fullmatch('[0-9]+\.?[0-9]*', newscan['freqlower']) != None) and float(newscan['freqlower']) >= 0 and float(newscan['freqlower']) <= 10000
 		valid = valid and (re.fullmatch('[0-9]+\.?[0-9]*', str(newscan['frequpper'])) != None) and float(newscan['frequpper']) >= 0 and float(newscan['frequpper']) <= 10000
 		valid = valid and newscan['freqlower'] <= newscan['frequpper']
-		valid = valid and (re.fullmatch('1[0-9]*', newscan['stepnumber']) != None) and int(newscan['stepnumber']) >= 1 and int(newscan['stepnumber']) <= 1000000
+		valid = valid and (re.fullmatch('[1-9][0-9]*', newscan['stepnumber']) != None) and int(newscan['stepnumber']) >= 1 and int(newscan['stepnumber']) <= 1000000
 	
 		if valid:
 	
