@@ -13,9 +13,9 @@ from astropy.table import Table
 from astropy import units as u
 from numpy import linspace
 from datetime import date
+from NTPTime import NTPTime
 import io
 import re
-import ntplib
 import sqlite3
 import _thread
 
@@ -27,6 +27,8 @@ class Scan:
 	def __init__(self):
 
 		self.station = CommandStation()
+		
+		self.ntp = NTPTime()
 
 
 	# Method to take a single data point at a single frequency for a single source.
@@ -59,7 +61,7 @@ class Scan:
 
 		spectrum = []
 
-		starttime = self.getcurrenttime()	# get start time of spectrum scan
+		starttime = self.ntp.getcurrenttime()	# get start time of spectrum scan
 
 		spectrumsuccess = True
 
@@ -79,7 +81,7 @@ class Scan:
 
 			spectrum.append(scan[0])	# append scan result to spectrum
 
-		endtime = self.getcurrenttime()		# get end time of spectrum scan
+		endtime = self.ntp.getcurrenttime()		# get end time of spectrum scan
 
 		data = {'spectrum': spectrum, 'starttime': starttime, 'endtime': endtime, 'spectrumsuccess': spectrumsuccess}		# package spectrum and time data
 
@@ -102,7 +104,7 @@ class Scan:
 		srtdb.row_factory = sqlite3.Row
 		cur = srtdb.cursor()
 
-		curtime = self.getcurrenttime()		# get start time of scan
+		curtime = self.ntp.getcurrenttime()		# get start time of scan
 
 		trackdata = []
 
@@ -138,7 +140,7 @@ class Scan:
 
 				return (trackdata, 'timeout')
 
-			curtime = self.getcurrenttime()		# update current time
+			curtime = self.ntp.getcurrenttime()		# update current time
 
 		print('scan complete')
 
@@ -163,7 +165,7 @@ class Scan:
 		srtdb.row_factory = sqlite3.Row
 		cur = srtdb.cursor()
 
-		curtime = self.getcurrenttime()		# get start time of scan
+		curtime = self.ntp.getcurrenttime()		# get start time of scan
 
 		driftdata = []
 
@@ -199,7 +201,7 @@ class Scan:
 
 				return (driftdata, 'timeout')
 
-			curtime = self.getcurrenttime()			# update current time
+			curtime = self.ntp.getcurrenttime()			# update current time
 
 		print('scan complete')
 
@@ -227,7 +229,7 @@ class Scan:
 
 		seconds = int(duration[0]) * 60 * 60 + int(duration[1]) * 60 + int(duration[2])
 
-		curtime = self.getcurrenttime()
+		curtime = self.ntp.getcurrenttime()
 
 		endtime = curtime + seconds		# calculate the ending time of the scan in unix time
 
@@ -285,20 +287,6 @@ class Scan:
 		srtdb.close()
 
 
-	# Helper method to get the current time from an NTP server.
-	#
-	# :return unixtime: current unix time
-	def getcurrenttime(self):
-
-		NTP_SERVER = 'ntp.carleton.edu'
-	
-		c = ntplib.NTPClient()								# initialize ntplib client
-		ntptime = c.request(NTP_SERVER, version = 4)		# get current time from Carleton's NTP server
-		unixtime = ntptime.tx_time							# convert ntp time to unix time (NTP 70 years ahead of unix)
-	
-		return unixtime
-
-
 	# Helper method to get the azimuth and altitude of a position.
 	#
 	# :param pos: tuple containing right ascension and declination
@@ -319,7 +307,7 @@ class Scan:
 
 		srtdb.close()
 
-		unixtime = self.getcurrenttime()		# get curent time to establish AltAz reference frame
+		unixtime = self.ntp.getcurrenttime()		# get curent time to establish AltAz reference frame
 
 		observingtime = Time(unixtime, format = 'unix')		# create astropy Time object using converted ntp time
 

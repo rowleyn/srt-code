@@ -7,8 +7,8 @@ Date: August 2018
 '''
 
 from Scan import Scan
+from NTPTime import NTPTime
 import Schedule
-import ntplib
 import datetime
 import time
 import _thread
@@ -16,8 +16,7 @@ import sqlite3
 from astral import Astral
 from astropy.time import Time
 
-
-NTP_SERVER = 'ntp.carleton.edu'		# NTP server for time retrieval. Change to suit your needs
+ntp = NTPTime()
 
 
 #
@@ -63,7 +62,7 @@ def main():
 
 		### set whether it is day or night ###
 
-		curtime = getcurrenttime()
+		curtime = ntp.getcurrenttime()
 
 		if curtime >= dusk and curtime <= dawn:
 
@@ -132,6 +131,11 @@ def main():
 			else:		# if source is not the sun, schedule at night
 
 				status = nightschedule.schedulescan(scanparams['id'], curtime)
+				
+			if status != 'scheduled':
+				
+				today = datetime.date.today()
+				cur.execute("INSERT INTO SCANHISTORY VALUES (?,?,?,?,?,?)", (newscan['id'], scanparams['name'], scanparams['type'], today.day. today.month, today.year))
 
 			cur.execute("UPDATE SCANIDS SET STATUS = ? WHERE ID = ?", (status, newscan['id']))
 			srtdb.commit()
@@ -207,7 +211,7 @@ def runscan(schedule):
 	srtdb.row_factory = sqlite3.Row
 	cur = srtdb.cursor()
 
-	curtime = getcurrenttime()
+	curtime = ntp.getcurrenttime()
 
 	currentscanid = None
 
@@ -255,19 +259,6 @@ def runscan(schedule):
 	srtdb.close()
 
 	return currentscanid
-
-
-# Helper method to get the current time from an NTP server.
-#
-# :return unixtime: current unix time
-def getcurrenttime():
-
-	NTP_SERVER = 'ntp.carleton.edu'
-
-	c = ntplib.NTPClient()								# initialize ntplib client
-	ntptime = c.request(NTP_SERVER, version = 4)		# get current time from Carleton's NTP server
-	unixtime = ntptime.tx_time							# convert ntp time to unix time (NTP 70 years ahead of unix)
-
-	return unixtime
+	
 
 main()

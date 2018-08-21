@@ -8,10 +8,11 @@ Date: August 2018
 from astropy.coordinates import SkyCoord, EarthLocation, AltAz
 from astropy.time import Time
 from astropy import units as u
+from NTPTime import NTPTime
 import sqlite3
 import re
 import datetime
-import ntplib
+import pytz
 from astral import Astral
 
 
@@ -29,6 +30,8 @@ class Schedule:
 		endblock = self.Block(None, endtime, endtime)
 
 		self.schedule = [startblock, endblock]
+		
+		self.localtz = pytz.timezone('America/Chicago')		# set local timezone for display time conversions
 
 
 	# Internal class for storing scan and time info in a Schedule
@@ -80,7 +83,7 @@ class Schedule:
 
 		print('attempting to schedule a scan')
 
-		for i in range(len(self.schedule) - 1):							# loops through the spaces between each Block in the schedule
+		for i in range(len(self.schedule) - 1):					# loops through the spaces between each Block in the schedule
 
 			print('checking for space after block ' + str(i))
 
@@ -92,7 +95,7 @@ class Schedule:
 
 				print(result)
 
-				if status == 'durationerror' or status == 'positionerror':		# error hierarchy is movebounds > poisition > duration
+				if status == 'durationerror' or status == 'positionerror':		# error hierarchy is movebounds > position > duration
 
 					status == result
 
@@ -100,15 +103,12 @@ class Schedule:
 
 					print('found a valid spot!')
 
-					status == result
+					status = result
 
 					newblock = Schedule.Block(scanid, starttime, endtime)
 					
-					starttime = re.split('\.|\s|:', Time(starttime, scale='utc', format='unix').iso) 	# serialize the time string to the proper display format
-					endtime = re.split('\.|\s|:', Time(endtime, scale='utc', format='unix').iso)
-					
-					starttime = starttime[1] + ':' + starttime[2]
-					endtime = endtime[1] + ':' + endtime[2]
+					starttime = datetime.datetime.fromtimestamp(starttime, pytz.utc).astimezone(self.localtz).strftime('%H:%M')	# convert time values to local time strings
+					endtime = datetime.datetime.fromtimestamp(endtime, pytz.utc).astimezone(self.localtz).strftime('%H:%M')
 
 					cur.execute("INSERT INTO SCHEDULE VALUES (?,?,?)", (scanid, starttime, endtime))	# update the schedule and scan status in the db
 					srtdb.commit()
@@ -242,17 +242,6 @@ class Schedule:
 
 		return 'scheduled'
 
-def getcurrenttime():
-
-	NTP_SERVER = 'ntp.carleton.edu'
-
-	c = ntplib.NTPClient()								# initialize ntplib client
-	ntptime = c.request(NTP_SERVER, version = 4)		# get current time from Carleton's NTP server
-	unixtime = ntptime.tx_time							# convert ntp time to unix time (NTP 70 years ahead of unix)
-
-	print('got time: ' + str(unixtime))
-
-	return unixtime
 
 def main():
 
@@ -285,9 +274,11 @@ def main():
 	# cur.execute("INSERT INTO SCANIDS VALUES (?,?,?)", (-20, 'scheduletest', 'submitted'))
 	# cur.execute("INSERT INTO SCANPARAMS VALUES (?,?,?,?,?,?,?,?,?)", (-20, 'track', 'polaris', '2h31m49s', '89d15m50s', '0h30m0s', 1500, 1510, 10))
 	# srtdb.commit()
+	
+	ntp = NTPTime()
 
-	schedule.schedulescan(-20, getcurrenttime())
-	schedule.schedulescan(-30, getcurrenttime())
+	schedule.schedulescan(-20, ntp.getcurrenttime())
+	schedule.schedulescan(-30, ntp.getcurrenttime())
 
 	for block in schedule.schedule:
 
