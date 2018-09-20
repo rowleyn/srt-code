@@ -18,13 +18,14 @@ from astropy.time import Time
 
 ntp = NTPTime()
 
+database_location = '../srtdatabase/srtdata.db'
 
 #
 # The main method of the telescope code. All telescope actions ultimately originate from this method.
 #
 def main():
 
-	srtdb = sqlite3.connect('srtdata.db')		# establish a connection and cursor into the database
+	srtdb = sqlite3.connect(database_location)		# establish a connection and cursor into the database
 	srtdb.row_factory = sqlite3.Row
 	cur = srtdb.cursor()
 
@@ -174,7 +175,7 @@ def main():
 # :return:
 def cancelscans(schedule):
 
-	srtdb = sqlite3.connect('srtdata.db')		# establish a connection and cursor into the database
+	srtdb = sqlite3.connect(database_location)		# establish a connection and cursor into the database
 	srtdb.row_factory = sqlite3.Row
 	cur = srtdb.cursor()
 
@@ -207,7 +208,7 @@ def cancelscans(schedule):
 # :return currentscanid: the id of the currently running scan
 def runscan(schedule):
 
-	srtdb = sqlite3.connect('srtdata.db')		# establish a connection and cursor into the database
+	srtdb = sqlite3.connect(database_location)		# establish a connection and cursor into the database
 	srtdb.row_factory = sqlite3.Row
 	cur = srtdb.cursor()
 

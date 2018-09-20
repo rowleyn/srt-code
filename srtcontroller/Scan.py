@@ -19,9 +19,6 @@ import re
 import sqlite3
 import _thread
 
-
-NTP_SERVER = 'ntp.carleton.edu'		# NTP server for time retrieval. Change to suit your needs
-
 class Scan:
 
 	def __init__(self):
@@ -29,6 +26,8 @@ class Scan:
 		self.station = CommandStation()
 		
 		self.ntp = NTPTime()
+		
+		self.database_location = '../srtdatabase/srtdata.db'
 
 
 	# Method to take a single data point at a single frequency for a single source.
@@ -100,7 +99,7 @@ class Scan:
 
 		print('running a track scan')
 
-		srtdb = sqlite3.connect('srtdata.db')		# establish a connection and cursor into the database
+		srtdb = sqlite3.connect(self.database_location)		# establish a connection and cursor into the database
 		srtdb.row_factory = sqlite3.Row
 		cur = srtdb.cursor()
 
@@ -161,7 +160,7 @@ class Scan:
 
 		print('running a drift scan')
 
-		srtdb = sqlite3.connect('srtdata.db')		# establish a connection and cursor into the database
+		srtdb = sqlite3.connect(self.database_location)		# establish a connection and cursor into the database
 		srtdb.row_factory = sqlite3.Row
 		cur = srtdb.cursor()
 
@@ -215,7 +214,7 @@ class Scan:
 	# :param nextscan: a dict object containing the parameters of a scan
 	def donextscan(self, nextscan):
 
-		srtdb = sqlite3.connect('srtdata.db')	# establish a connection and cursor into the database
+		srtdb = sqlite3.connect(self.database_location)	# establish a connection and cursor into the database
 		srtdb.row_factory = sqlite3.Row
 		cur = srtdb.cursor()
 
@@ -295,7 +294,7 @@ class Scan:
 
 		print('calculating azal')
 
-		srtdb = sqlite3.connect('srtdata.db')	# establish a connection and cursor into the database
+		srtdb = sqlite3.connect(self.database_location)	# establish a connection and cursor into the database
 		srtdb.row_factory = sqlite3.Row
 		cur = srtdb.cursor()
 
@@ -350,7 +349,7 @@ class Scan:
 
 def main():
 	
-	srtdb = sqlite3.connect('srtdata.db')	# establish a connection and cursor into the database
+	srtdb = sqlite3.connect('../srtdatabase/srtdata.db')	# establish a connection and cursor into the database
 	srtdb.row_factory = sqlite3.Row
 	cur = srtdb.cursor()
 	

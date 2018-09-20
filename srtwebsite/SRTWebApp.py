@@ -28,6 +28,8 @@ admin_password = 'something'
 normal_username = 'student'
 normal_password = 'something'
 
+database_location = '../srtdatabase/srtdata.db'
+
 @app.before_request
 def before_request():
 	session.permanent = True
@@ -126,7 +128,7 @@ def get_status():
 	
 	if 'username' in session:
 
-		srtdb = sqlite3.connect('srtdata.db')	# establish a connection and cursor into the database
+		srtdb = sqlite3.connect(database_location)	# establish a connection and cursor into the database
 		srtdb.row_factory = sqlite3.Row
 		cur = srtdb.cursor()
 	
@@ -167,7 +169,7 @@ def submit_scan():
 
 		newscan = request.get_json(force=True)	# get json-formatted scan parameters
 		
-		srtdb = sqlite3.connect('srtdata.db')	# establish a connection and a cursor into the database
+		srtdb = sqlite3.connect(database_location)	# establish a connection and a cursor into the database
 		srtdb.row_factory = sqlite3.Row
 		cur = srtdb.cursor()
 	
@@ -269,7 +271,7 @@ def deschedule_scan():
 
 		scanid = int(request.get_data()) 		# get id of scan to be removed
 	
-		srtdb = sqlite3.connect('srtdata.db')	# establish a connection and cursor into the database
+		srtdb = sqlite3.connect(database_location)	# establish a connection and cursor into the database
 		srtdb.row_factory = sqlite3.Row
 		cur = srtdb.cursor()
 	
@@ -306,7 +308,7 @@ def add_source():
 
 		newsource = request.get_json(force=True)	# get json-formatted source parameters
 	
-		srtdb = sqlite3.connect('srtdata.db')		# establish a connection and cursor into the database
+		srtdb = sqlite3.connect(database_location)		# establish a connection and cursor into the database
 		srtdb.row_factory = sqlite3.Row
 		cur = srtdb.cursor()
 	
@@ -348,7 +350,7 @@ def remove_source():
 
 		sourcename = request.get_data().decode('ascii') 	# get name of source to be removed
 	
-		srtdb = sqlite3.connect('srtdata.db')		# establish a connection and cursor into the database
+		srtdb = sqlite3.connect(database_location)		# establish a connection and cursor into the database
 		srtdb.row_factory = sqlite3.Row
 		cur = srtdb.cursor()
 	
@@ -379,7 +381,7 @@ def update_config():
 
 		newconfig = request.get_json()	# get json-formatted source parameters
 	
-		srtdb = sqlite3.connect('srtdata.db')		# establish a connection and cursor into the database
+		srtdb = sqlite3.connect(database_location)		# establish a connection and cursor into the database
 		srtdb.row_factory = sqlite3.Row
 		cur = srtdb.cursor()
 	
@@ -465,7 +467,7 @@ def download_scans():
 
 		idlist = request.get_json(force=True)		# get json-formatted list of scan names
 	
-		srtdb = sqlite3.connect('srtdata.db')		# establish a connection and cursor into the database
+		srtdb = sqlite3.connect(database_location)		# establish a connection and cursor into the database
 		srtdb.row_factory = sqlite3.Row
 		cur = srtdb.cursor()
 	
@@ -512,7 +514,7 @@ def search_scans():
 
 		searchparams = request.get_json(force=True)		# get json-formatted list of search params
 	
-		srtdb = sqlite3.connect('srtdata.db')			# establish a connection and cursor into the database
+		srtdb = sqlite3.connect(database_location)			# establish a connection and cursor into the database
 		srtdb.row_factory = sqlite3.Row
 		cur = srtdb.cursor()
 	
@@ -580,7 +582,7 @@ def delete_scan():
 
 		scanids = request.get_json()				# get json-formatted list of scan names
 	
-		srtdb = sqlite3.connect('srtdata.db')		# establish a connection and cursor into the database
+		srtdb = sqlite3.connect(database_location)		# establish a connection and cursor into the database
 		srtdb.row_factory = sqlite3.Row
 		cur = srtdb.cursor()
 	
@@ -609,7 +611,7 @@ def get_scanstatus():
 	
 	if 'username' in session:
 
-		srtdb = sqlite3.connect('srtdata.db')		# establish a connection and cursor into the database
+		srtdb = sqlite3.connect(database_location)		# establish a connection and cursor into the database
 		srtdb.row_factory = sqlite3.Row
 		cur = srtdb.cursor()
 	
@@ -648,7 +650,7 @@ def get_history():
 	
 	if 'username' in session:
 
-		srtdb = sqlite3.connect('srtdata.db')		# establish a connection and cursor into the database
+		srtdb = sqlite3.connect(database_location)		# establish a connection and cursor into the database
 		srtdb.row_factory = sqlite3.Row
 		cur = srtdb.cursor()
 	
@@ -698,7 +700,7 @@ Function that gets the scan schedule and current scan from the database and retu
 '''
 def scheduleGetter():
 
-	srtdb = sqlite3.connect('srtdata.db')	# establish a connection and cursor into the database
+	srtdb = sqlite3.connect(database_location)	# establish a connection and cursor into the database
 	srtdb.row_factory = sqlite3.Row
 	cur = srtdb.cursor()
 
@@ -752,7 +754,7 @@ Function that gets source data from the database and returns it as a Flask Respo
 '''
 def sourceGetter():
 
-	srtdb = sqlite3.connect('srtdata.db')		# establish a connection and cursor into the database
+	srtdb = sqlite3.connect(database_location)		# establish a connection and cursor into the database
 	srtdb.row_factory = sqlite3.Row
 	cur = srtdb.cursor()
 
@@ -780,7 +782,7 @@ Function that gets configuration parameters from the database and returns them a
 '''
 def configGetter( section ):
 
-	srtdb = sqlite3.connect('srtdata.db')		# establish a connection and cursor into the database
+	srtdb = sqlite3.connect(database_location)		# establish a connection and cursor into the database
 	srtdb.row_factory = sqlite3.Row
 	cur = srtdb.cursor()
 

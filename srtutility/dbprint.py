@@ -1,7 +1,7 @@
 
 import sqlite3
 
-srtdb = sqlite3.connect('srtdata.db')
+srtdb = sqlite3.connect('../srtdatabase/srtdata.db')
 cur = srtdb.cursor()
 
 config = cur.execute("SELECT * FROM CONFIG").fetchall()

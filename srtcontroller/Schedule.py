@@ -32,6 +32,8 @@ class Schedule:
 		self.schedule = [startblock, endblock]
 		
 		self.localtz = pytz.timezone('America/Chicago')		# set local timezone for display time conversions
+		
+		self.database_location = '../srtdatabase/srtdata.db'
 
 
 	# Internal class for storing scan and time info in a Schedule
@@ -55,7 +57,7 @@ class Schedule:
 	# :return status: the status of the scan indicating success or failure to schedule
 	def schedulescan(self, scanid, curtime):
 
-		srtdb = sqlite3.connect('srtdata.db')						# establish a connection and cursor into the database
+		srtdb = sqlite3.connect(self.database_location)			# establish a connection and cursor into the database
 		srtdb.row_factory = sqlite3.Row
 		cur = srtdb.cursor()
 
@@ -164,7 +166,7 @@ class Schedule:
 	# :return: a string indicating the status of the scan
 	def checkscan(ras, dec, scantype, starttime, endtime):
 
-		srtdb = sqlite3.connect('srtdata.db')	# establish a connection and cursor into the database
+		srtdb = sqlite3.connect(self.database_location)	# establish a connection and cursor into the database
 		srtdb.row_factory = sqlite3.Row
 		cur = srtdb.cursor()
 
@@ -245,7 +247,7 @@ class Schedule:
 
 def main():
 
-	srtdb = sqlite3.connect('srtdata.db')		# establish a connection and cursor into the database
+	srtdb = sqlite3.connect('../srtdatabase/srtdata.db')		# establish a connection and cursor into the database
 	srtdb.row_factory = sqlite3.Row
 	cur = srtdb.cursor()
 

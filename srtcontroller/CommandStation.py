@@ -15,6 +15,8 @@ import math
 
 class CommandStation:
 	
+	database_location = '../srtdatabase/srtdata.db'
+	
 	# Method that commands the station to move to a particular azimuth and altitude.
 	#
 	# :param newaz: target azimuth
@@ -24,7 +26,7 @@ class CommandStation:
 
 		### get current station position ###
 
-		srtdb = sqlite3.connect('srtdata.db')	# establish a connection and cursor into the database
+		srtdb = sqlite3.connect(database_location)	# establish a connection and cursor into the database
 		srtdb.row_factory = sqlite3.Row
 		cur = srtdb.cursor()
 
