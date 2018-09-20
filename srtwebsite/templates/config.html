@@ -1,0 +1,252 @@
+<div>
+
+<!-- Style info that will be pasted into the page. -->
+<div id="style">
+
+	<style id="replace">
+
+		#accordion {
+			width: 80%;
+			margin: 1em auto 1em;
+		}
+		table {
+			margin-bottom: 1em;
+		}
+		#sourcelist {
+			width: 50%;
+		}
+		.close {
+			cursor: pointer;
+			display: block;
+			margin: 0 auto;
+		}
+		.entry > td {
+			border: 1px solid #727272;
+			padding: 4px 6px;
+		}
+		#hiddenonstart {
+			display: none;
+		}
+		.ui-dialog .ui-state-error {
+			padding: 0.3em;
+		}
+		.validateTips {
+			border: 1px solid transparent;
+			padding: 0.3em;
+		}
+
+	</style>
+
+</div>
+
+<!-- Script block that will be pasted into the page. Will automatically retrieve the script from the server. -->
+<div id="script">
+
+	{% if admin %}
+	<script>
+		var admin = true;
+	</script>
+	{% else %}
+	<script>
+		var admin = false;
+	</script>
+	{% endif %}
+	<script id="replace">
+		var url = "/static/config.js";
+		$.getScript( url );
+	</script>
+
+</div>
+
+<!-- Main content that will be pasted into the page. -->
+<div id="content">
+
+	<!-- Contents packaged inside hidden div to minimize visual flicker on page load. -->
+	<div id="hiddenonstart">
+
+	<!-- Jquery UI accordion for displaying station configuration data sectioned by type. -->
+	<div id="accordion">
+
+		<h3>Name and Location</h3>
+		<div>
+
+			<p class="validateTips">All fields are mandatory.</p>
+
+			<table id="nameloc">
+				<thead>
+					<tr class="ui-widget-header">
+						<th>Station Name</th>
+						<th>Earth Latitude</th>
+						<th>Earth Longitude</th>
+						<th>Height (m)</th>
+					</tr>
+				</thead>
+
+				<tbody>
+					<tr>
+						{% if admin %}
+						<td><input type="text" name="name" id="name"></td>
+						<td><input type="text" name="lat" id="lat"></td>
+						<td><input type="text" name="lon" id="lon"></td>
+						<td><input type="text" name="height" id="height"></td>
+						{% else %}
+						<td><input type="text" name="name" id="name" disabled></td>
+						<td><input type="text" name="lat" id="lat" disabled></td>
+						<td><input type="text" name="lon" id="lon" disabled></td>
+						<td><input type="text" name="height" id="height" disabled></td>
+						{% endif %}
+					</tr>
+				</tbody>
+			</table>
+			
+			{% if admin %}
+			<button class="update">Update</button>
+			{% else %}
+			<button class="update" disabled>Update</button>
+			{% endif %}
+
+		</div>
+
+		<h3>Movement Limits</h3>
+		<div>
+
+			<p class="validateTips">All fields are mandatory.</p>
+
+			<table id="movelimits">
+				<thead>
+					<tr class="ui-widget-header">
+						<th>Minimum Azimuth</th>
+						<th>Maximum Azimuth</th>
+						<th>Minimum Altitude</th>
+						<th>Maximum Altitude</th>
+					</tr>
+				</thead>
+
+				<tbody>
+					<tr>
+						{% if admin %}
+						<td><input type="text" name="azlower" id="azlower"></td>
+						<td><input type="text" name="azupper" id="azupper"></td>
+						<td><input type="text" name="allower" id="allower"></td>
+						<td><input type="text" name="alupper" id="alupper"></td>
+						{% else %}
+						<td><input type="text" name="azlower" id="azlower" disabled></td>
+						<td><input type="text" name="azupper" id="azupper" disabled></td>
+						<td><input type="text" name="allower" id="allower" disabled></td>
+						<td><input type="text" name="alupper" id="alupper" disabled></td>
+						{% endif %}
+					</tr>
+				</tbody>
+			</table>
+
+			{% if admin %}
+			<button class="update">Update</button>
+			{% else %}
+			<button class="update" disabled>Update</button>
+			{% endif %}
+			
+		</div>
+
+		<h3>Frequency Limits</h3>
+		<div>
+
+			<p class="validateTips">All fields are mandatory.</p>
+
+			<table id="freqlimits">
+				<thead>
+					<tr class="ui-widget-header">
+						<th>Minimum Frequency</th>
+						<th>Maximum Frequency</th>
+					</tr>
+				</thead>
+
+				<tbody>
+					<tr>
+						{% if admin %}
+						<td><input type="text" name="freqlower" id="freqlower"></td>
+						<td><input type="text" name="frequpper" id="frequpper"></td>
+						{% else %}
+						<td><input type="text" name="freqlower" id="freqlower" disabled></td>
+						<td><input type="text" name="frequpper" id="frequpper" disabled></td>
+						{% endif %}
+					</tr>
+				</tbody>
+			</table>
+
+			{% if admin %}
+			<button class="update">Update</button>
+			{% else %}
+			<button class="update" disabled>Update</button>
+			{% endif %}
+
+		</div>
+
+		<h3>Sources</h3>
+		<div>
+
+			<table id="sourcelist">
+				<thead>
+					<tr class="ui-widget-header">
+						<th>Name</th>
+						<th>RA</th>
+						<th>Dec</th>
+						<th></th>
+					</tr>
+				</thead>
+
+				<tbody>
+					<tr class="entry">
+						<td id="sourcename"></td>
+						<td id="sourceras"></td>
+						<td id="sourcedec"></td>
+						<td><span class="ui-icon ui-icon-circle-close close">Remove source</span></td>
+					</tr>
+				</tbody>
+			</table>
+
+			{% if admin %}
+			<button id="addsource">New source</button>
+			{% else %}
+			<button id="addsource" disabled>New source</button>
+			{% endif %}
+
+		</div>
+
+	</div>
+
+	<!-- Jquery UI dialog form for adding new sources. -->
+	<div id="dialog-sourceform" title="New source">
+
+		<p class="validateTips">All fields are mandatory.</p>
+
+		<form>
+
+			{% if admin %}
+			<p><label for="name">Name</label>
+			<input type="text" name="name" id="name" placeholder="max 30 characters"></p>
+
+			<p><label for="ras">RA</label>
+			<input type="text" name="ras" id="ras" placeholder="#h#m#s"></p>
+
+			<p><label for="dec">Dec</label>
+			<input type="text" name="dec" id="dec" placeholder="#d#m#s"></p>
+			{% else %}
+			<p><label for="name">Name</label>
+			<input type="text" name="name" id="name" placeholder="max 30 characters" disabled></p>
+
+			<p><label for="ras">RA</label>
+			<input type="text" name="ras" id="ras" placeholder="#h#m#s" disabled></p>
+
+			<p><label for="dec">Dec</label>
+			<input type="text" name="dec" id="dec" placeholder="#d#m#s" disabled></p>
+			{% endif %}
+
+		</form>
+
+	</div>
+
+	</div>
+
+</div>
+
+</div>
