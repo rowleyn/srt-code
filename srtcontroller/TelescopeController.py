@@ -6,8 +6,12 @@ Author: Nathan Rowley
 Date: August 2018
 '''
 
+import sys
+
+sys.path.append(r'/var/www/html/CarletonSRT')
+
 from Scan import Scan
-from NTPTime import NTPTime
+from srtutility.NTPTime import NTPTime
 import Schedule
 import datetime
 import time
@@ -52,7 +56,34 @@ def main():
 	nightschedule = Schedule.Schedule(dusk, dawn)
 
 	currentscanid = None
+	
+	### attempt to reschedule scans in SCHEDULE after restart ###
+	
+	schedule = cur.execute("SELECT * FROM SCHEDULE").fetchall()		# get the schedule from the db
+	
+	cur.execute("DELETE FROM SCHEDULE")		# delete all entries in SCHEDULE
+	
+	for scan in schedule:		# attempt to reschedule all scheduled scans
 
+		scanparams = cur.execute("SELECT * FROM SCANPARAMS WHERE ID = ?", (scan['id'],)).fetchone()
+		
+		curtime = ntp.getcurrenttime()
+
+		if scanparams['source'] == 'sun':		# if source is the sun, schedule during the day
+
+			status = dayschedule.schedulescan(scanparams['id'], curtime)
+
+		else:		# if source is not the sun, schedule at night
+
+			status = nightschedule.schedulescan(scanparams['id'], curtime)
+				
+		if status != 'scheduled':
+				
+			today = datetime.date.today()
+			cur.execute("INSERT INTO SCANHISTORY VALUES (?,?,?,?,?,?)", (newscan['id'], scanparams['name'], scanparams['type'], today.day, today.month, today.year))
+
+		cur.execute("UPDATE SCANIDS SET STATUS = ? WHERE ID = ?", (status, newscan['id']))
+		srtdb.commit()
 
 	### MAIN EXECUTION LOOP FOR TELESCOPE-SIDE CODE ###
 
@@ -136,7 +167,7 @@ def main():
 			if status != 'scheduled':
 				
 				today = datetime.date.today()
-				cur.execute("INSERT INTO SCANHISTORY VALUES (?,?,?,?,?,?)", (newscan['id'], scanparams['name'], scanparams['type'], today.day. today.month, today.year))
+				cur.execute("INSERT INTO SCANHISTORY VALUES (?,?,?,?,?,?)", (newscan['id'], scanparams['name'], scanparams['type'], today.day, today.month, today.year))
 
 			cur.execute("UPDATE SCANIDS SET STATUS = ? WHERE ID = ?", (status, newscan['id']))
 			srtdb.commit()

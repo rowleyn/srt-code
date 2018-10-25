@@ -8,7 +8,7 @@ Date: August 2018
 from astropy.coordinates import SkyCoord, EarthLocation, AltAz
 from astropy.time import Time
 from astropy import units as u
-from NTPTime import NTPTime
+from srtutility.NTPTime import NTPTime
 import sqlite3
 import re
 import datetime
@@ -93,13 +93,13 @@ class Schedule:
 
 				print('there is space, checking for validity')
 
-				result = Schedule.checkscan(scanparams['ras'], scanparams['dec'], scantype, starttime, endtime)		# check to see if the scan is valid within a particular time window
+				result = self.checkscan(scanparams['ras'], scanparams['dec'], scantype, starttime, endtime)		# check to see if the scan is valid within a particular time window
 
 				print(result)
 
 				if status == 'durationerror' or status == 'positionerror':		# error hierarchy is movebounds > position > duration
 
-					status == result
+					status = result
 
 				if result == 'scheduled':		# if the scan is valid, create a new Block for the scan and insert it into the schedule
 
@@ -164,7 +164,7 @@ class Schedule:
 	# :param starttime: start time of the scan in unix time
 	# :param endtime: end time of the scan in unix time
 	# :return: a string indicating the status of the scan
-	def checkscan(ras, dec, scantype, starttime, endtime):
+	def checkscan(self, ras, dec, scantype, starttime, endtime):
 
 		srtdb = sqlite3.connect(self.database_location)	# establish a connection and cursor into the database
 		srtdb.row_factory = sqlite3.Row

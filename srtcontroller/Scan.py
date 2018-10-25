@@ -13,7 +13,7 @@ from astropy.table import Table
 from astropy import units as u
 from numpy import linspace
 from datetime import date
-from NTPTime import NTPTime
+from srtutility.NTPTime import NTPTime
 import io
 import re
 import sqlite3
